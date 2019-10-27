@@ -14,3 +14,8 @@ provider:
 functions:
   setLocation:
     handler: handler.setLocation
+  sendPhoneCode:
+    handler: handler.sendPhoneCode
+
+package:
+  individually: true
