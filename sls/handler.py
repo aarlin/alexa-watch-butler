@@ -83,7 +83,7 @@ def send_phone_code(event, context):
     else:
         return response["login_request_code"]
 
-def get_token(event, context):
+def get_token_through_phone(event, context):
     VALIDATE_URL = CODE_VALIDATE_URL.replace("#confirmation_code", event['code'])
     VALIDATE_URL = VALIDATE_URL.replace("#phone_number", event['number'])
     VALIDATE_URL = VALIDATE_URL.replace("#request_code", event['req_code'])
