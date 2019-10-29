@@ -1,24 +1,5 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
 
 service: facebook-auth
-# app and org for use with dashboard.serverless.com
-#app: your-app-name
-#org: your-org-name
-
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
-# frameworkVersion: "=X.X.X"
 
 provider:
   name: aws
@@ -62,10 +43,12 @@ functions:
     handler: handler.get_fb_access_token
   send_phone_code:
     handler: handler.send_phone_code
-  get_token:
-    handler: handler.get_token
+  get_token_through_phone:
+    handler: handler.get_token_through_phone
   set_location:
     handler: handler.set_location
+    events:
+      - alexaSkill: amzn1.ask.skill.2f86fd8b-988e-42ea-91a9-5778109c01af
   
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -121,6 +104,8 @@ functions:
 
 plugins:
   - serverless-python-requirements
+  - serverless-alexa-skills
 custom:
   pythonRequirements:
     dockerizePip: true
+    dockerFile: ./Dockerfile
