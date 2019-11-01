@@ -102,17 +102,38 @@ def get_token_through_phone(event, context):
 
 def set_location(event, context):
     location_headers = {
-      'X-Auth-Token' : event['auth_token'],
+      'X-Auth-Token' : '<TOKEN>',
       'Content-Type': 'application/json',
       'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
 
     URL = 'https://api.gotinder.com/user/ping'
+
+    data = {
+        "lat": 34.6937,
+        "lon": 135.5023
+    }
     
-    r = requests.post(URL, headers=location_headers, data=json.dumps(event), verify=False)
-    print(r.url)
+    
+    r = requests.post(URL, headers=location_headers, data=json.dumps(data), verify=False)
     response = r.json()
     if(response['status'] == None):
-        return False
+        return {
+            'version': '1.0',
+            'response': {
+                'outputSpeech': {
+                    'type': 'PlainText',
+                    'text': 'Error occurred from API response'
+                }
+            }
+        }
     else:
-        return response['status']
+        return {
+            'version': '1.0',
+            'response': {
+                'outputSpeech': {
+                    'type': 'PlainText',
+                    'text': '200 OK'
+                }
+            }
+        }

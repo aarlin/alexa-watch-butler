@@ -39,16 +39,10 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  get_fb_access_token:
-    handler: handler.get_fb_access_token
-  send_phone_code:
-    handler: handler.send_phone_code
-  get_token_through_phone:
-    handler: handler.get_token_through_phone
   set_location:
     handler: handler.set_location
     events:
-      - alexaSkill: amzn1.ask.skill.2f86fd8b-988e-42ea-91a9-5778109c01af
+      - alexaSkill: amzn1.ask.skill.4c45eeac-bc69-4456-9a72-1a8ef6f019aa
   
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -105,7 +99,38 @@ functions:
 plugins:
   - serverless-python-requirements
   - serverless-alexa-skills
+
 custom:
-  pythonRequirements:
-    dockerizePip: true
-    dockerFile: ./Dockerfile
+  alexa:
+    vendorId: ${env:AMAZON_VENDOR_ID}
+    clientId: ${env:AMAZON_CLIENT_ID}
+    clientSecret: ${env:AMAZON_CLIENT_SECRET}
+    skills:
+      - id: amzn1.ask.skill.4c45eeac-bc69-4456-9a72-1a8ef6f019aa
+        manifest:
+          apis:
+            custom:
+              endpoint:
+                uri: arn:aws:lambda:us-east-1:480506093665:function:facebook-auth-dev-set_location
+          publishingInformation:
+            locales:
+              en-US:
+                name: TinderLocationSetter
+        models:
+          en-US:
+            interactionModel:
+              languageModel:
+                invocationName: spoof tinder
+                intents:
+                  - name: SetLocationIntent
+                    samples:
+                    - 'set my location'
+                    - 'set location'
+                    - 'set Tinder location'
+                    - 'set my Tinder location'
+                  - name: AMAZON.HelpIntent
+                    samples: []
+                  - name: AMAZON.CancelIntent
+                    samples: []
+                  - name: AMAZON.StopIntent
+                    samples: []

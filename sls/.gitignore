@@ -22,3 +22,4 @@ facebook-auth
 events
 __pycache__
 node_modules
+.env
