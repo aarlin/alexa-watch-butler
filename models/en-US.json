@@ -1,0 +1,72 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "Tinder Lite",
+            "intents": [
+                {
+                    "name": "AMAZON.FallbackIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "PhoneAuthIntent",
+                    "slots": [],
+                    "samples": [
+                        "authenticate with phone",
+                        "authenticate through phone",
+                        "phone authentication"
+                    ]
+                },
+                {
+                    "name": "PhoneRequestCodeIntent",
+                    "slots": [
+                        {
+                            "name": "PhoneNumber",
+                            "type": "AMAZON.PhoneNumber"
+                        }
+                    ],
+                    "samples": [
+                        "My phone number is {PhoneNumber}"
+                    ]
+                },
+                {
+                    "name": "PhoneAuthenticationIntent",
+                    "slots": [
+                        {
+                            "name": "RequestCode",
+                            "type": "AMAZON.NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        "My request code is {RequestCode}"
+                    ]
+                },
+                {
+                    "name": "SetLocationIntent",
+                    "slots": [
+                        {
+                            "name": "City",
+                            "type": "AMAZON.US_CITY"
+                        }
+                    ],
+                    "samples": [
+                        "Set my location to {City}"
+                    ]
+                }
+
+            ],
+            "types": []
+        }
+    }
+}
