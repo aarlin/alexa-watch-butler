@@ -13,6 +13,7 @@ from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model.ui import SimpleCard
 from ask_sdk_model import Response
 
+from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
 from tinder_api import set_location
 
@@ -61,11 +62,27 @@ class FacebookAuthIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         """Handler for Skill Launch."""
         # type: (HandlerInput) -> Response
-        speech_text = "To access Tinder, what is your Facebook email and password?"
+        speech_text_invalid_acc_link = "To access Tinder, you need to link your Facebook account"
+        speech_text_valid_acc_link = "We have you authenticated. Where do you want to set your location to?"
+        
+        current_user = handler_input.request_envelope.context.system.user
+        session_attributes = handler_input.attributes_manager.session_attributes
 
-        return handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Facebook Authentication", speech_text)).set_should_end_session(
-            False).response
+        print(current_user)
+
+        if access_token not in current_user:
+            return handler_input.response_builder.speak(speech_text).set_card(
+                SimpleCard("Facebook Authentication", speech_text)).set_should_end_session(
+                False).response
+        else:
+            print(current_user.access_token)
+            auth_token = get_auth_token(current_user.access_token)
+            session_attributes['AUTH_TOKEN'] = auth_token
+            return handler_input.response_builder.speak(speech_text).set_card(
+                SimpleCard("Facebook Authentication", speech_text)).set_should_end_session(
+                False).response
+            
+
 
 class PhoneRequestCodeIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -82,8 +99,8 @@ class PhoneRequestCodeIntentHandler(AbstractRequestHandler):
         if 'PhoneNumber' in slots:
             phone_number = slots['PhoneNumber'].value
             handler_input.attributes_manager.session_attributes['PHONE_NUMBER'] = phone_number
-            confirmation_code = send_phone_code(phone_number)
-            handler_input.attributes_manager.session_attributes['CONFIRMATION_CODE'] = confirmation_code
+            request_code = send_phone_code(phone_number)
+            handler_input.attributes_manager.session_attributes['REQUEST_CODE'] = request_code
         else:
             speech = "I'm not sure what your phone number is, please try again"
             reprompt = ("I'm not sure what your phone number is. "
@@ -108,17 +125,17 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
         slots = handler_input.request_envelope.request.intent.slots
         session_attributes = handler_input.attributes_manager.session_attributes
 
-        if 'ConfirmationCode' in slots:
-            confirmation_code = slots['ConfirmationCode'].value
-            handler_input.attributes_manager.session_attributes['CONFIRMATION_CODE'] = confirmation_code
-            auth_token = get_token_through_phone(confirmation_code, session_attributes['PHONE_NUMBER'], session_attributes['REQUEST_CODE'])
+        if 'SMSCode' in slots:
+            sms_code = slots['SMSCode'].value
+            session_attributes['SMS_CODE'] = sms_code
+            auth_token = get_token_through_phone(sms_code, session_attributes['PHONE_NUMBER'], session_attributes['REQUEST_CODE'])
 
-            handler_input.attributes_manager.session_attributes['AUTH_TOKEN'] = auth_token
+            session_attributes['AUTH_TOKEN'] = auth_token
         else:
-            speech = "I'm not sure what your request code is, please try again"
-            reprompt = ("I'm not sure what your request code is. "
-                        "You can tell me your request code by saying, "
-                        "my request code is ")
+            speech = "I'm not sure what your confirmation code is, please try again"
+            reprompt = ("I'm not sure what your confirmation code is. "
+                        "You can tell me your confirmation code by saying, "
+                        "my confirmation code is ")
 
         speech_text = "Okay, we have you authenticated. Where do you want to set your location to?"
 

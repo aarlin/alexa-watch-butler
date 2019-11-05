@@ -37,22 +37,23 @@
                         }
                     ],
                     "samples": [
-                        "My phone number is {PhoneNumber}"
+                        "My phone number is {PhoneNumber}",
+                        "{PhoneNumber}"
                     ]
                 },
                 {
                     "name": "PhoneAuthenticationIntent",
                     "slots": [
                         {
-                            "name": "ConfirmationCode",
+                            "name": "SMSCode",
                             "type": "AMAZON.NUMBER"
                         }
                     ],
                     "samples": [
-                        "My code is {ConfirmationCode}",
-                        "My confirmation code is {ConfirmationCode}",
-                        "Confirmation code is {ConfirmationCode}",
-                        "{ConfirmationCode}"
+                        "My code is {SMSCode}",
+                        "My request code is {SMSCode}",
+                        "Request code is {SMSCode}",
+                        "{SMSCode}"
                     ]
                 },
                 {
