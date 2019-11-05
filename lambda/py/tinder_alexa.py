@@ -11,8 +11,6 @@ from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model.ui import SimpleCard
 from ask_sdk_model import Response
 
-from authentication import send_phone_code, get_token_through_phone
-
 sb = SkillBuilder()
 
 logger = logging.getLogger(__name__)
@@ -22,8 +20,9 @@ logger.setLevel(logging.INFO)
 def launch_request_handler(handler_input):
     """Handler for Skill Launch."""
     # type: (HandlerInput) -> Response
-    speech_text = "Welcome to the Tinder Alexa skill! " +
-        "Would you like to authenicate with phone or authenticate through email"
+    speech_text = (
+        "Welcome to the Tinder Lite! "
+        "Would you like to authenicate with phone or authenticate through email?")
 
     return handler_input.response_builder.speak(speech_text).set_card(
         SimpleCard("Hello World", speech_text)).set_should_end_session(
@@ -163,9 +162,10 @@ def all_exception_handler(handler_input, exception):
     return handler_input.response_builder.response
 
 
-handler = sb.lambda_handler()
-
 
     # if color_slot_key in handler_input.attributes_manager.session_attributes:
     #     fav_color = handler_input.attributes_manager.session_attributes[
     #         color_slot_key]
+
+lambda_handler = sb.lambda_handler()
+

@@ -1,7 +1,7 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "Tinder Lite",
+            "invocationName": "tinder lite",
             "intents": [
                 {
                     "name": "AMAZON.FallbackIntent",
