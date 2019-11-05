@@ -44,12 +44,15 @@
                     "name": "PhoneAuthenticationIntent",
                     "slots": [
                         {
-                            "name": "RequestCode",
+                            "name": "ConfirmationCode",
                             "type": "AMAZON.NUMBER"
                         }
                     ],
                     "samples": [
-                        "My request code is {RequestCode}"
+                        "My code is {ConfirmationCode}",
+                        "My confirmation code is {ConfirmationCode}",
+                        "Confirmation code is {ConfirmationCode}",
+                        "{ConfirmationCode}"
                     ]
                 },
                 {
