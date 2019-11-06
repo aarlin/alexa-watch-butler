@@ -25,7 +25,18 @@
                     "samples": [
                         "authenticate with phone",
                         "authenticate through phone",
-                        "phone authentication"
+                        "phone authentication",
+                        "phone"
+                    ]
+                },
+                {
+                    "name": "FacebookAuthIntent",
+                    "slots": [],
+                    "samples": [
+                        "authenticate with facebook",
+                        "authenticate through facebook",
+                        "facebook authentication",
+                        "facebook"
                     ]
                 },
                 {
