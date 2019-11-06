@@ -11,20 +11,15 @@ def set_location(auth_token, location):
 
     URL = 'https://api.gotinder.com/user/ping'
 
-    latitude = None
-    longtitude = None
     geolocator = Nominatim(user_agent="Tinder Location Setter")
-
-    location = geolocator.geocode(location)
-    print((location.latitude, location.longitude))
-    latitude = location.latitude
-    longtitude = location.longtitude
+    location_data = geolocator.geocode(location)
 
     data = {
-        "lat": latitude,
-        "lon": longtitude
+      "lat": location_data.latitude,
+      "lon": location_data.longitude
     }
     
-    r = requests.post(URL, headers=location_headers, data=json.dumps(data), verify=False)
+    r = requests.post(URL, headers=location_headers, data=json.dumps(data), verify=True)
     response = r.json()
+    print(response)
     return response

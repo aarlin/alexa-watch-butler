@@ -73,10 +73,17 @@
                         {
                             "name": "City",
                             "type": "AMAZON.US_CITY"
+                        },
+                        {
+                            "name": "Country",
+                            "type": "AMAZON.Country"
+
                         }
                     ],
                     "samples": [
-                        "Set my location to {City}"
+                        "Set my location to {City}",
+                        "Set my country to {Country}",
+                        "Set my location to {Country}"
                     ]
                 }
 

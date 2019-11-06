@@ -16,6 +16,7 @@ from ask_sdk_model import Response
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
 from tinder_api import set_location
+from utils import EmptyNoneFormatter
 
 sb = SkillBuilder()
 
@@ -31,8 +32,8 @@ class LaunchRequestHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
         speech_text = (
-            "Welcome to the Tinder Lite! "
-            "Would you like to authenicate with phone or authenticate through email?")
+            "Welcome to Tinder Lite! "
+            "Would you like to authenicate with phone or authenticate through facebook?")
 
         return handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Hello World", speech_text)).set_should_end_session(
@@ -62,27 +63,23 @@ class FacebookAuthIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         """Handler for Skill Launch."""
         # type: (HandlerInput) -> Response
-        speech_text_invalid_acc_link = "To access Tinder, you need to link your Facebook account"
+        speech_text_invalid_acc_link = "To access Tinder, please setup account linking."
         speech_text_valid_acc_link = "We have you authenticated. Where do you want to set your location to?"
         
-        current_user = handler_input.request_envelope.context.system.user
+        access_token = handler_input.request_envelope.context.system.user.access_token
         session_attributes = handler_input.attributes_manager.session_attributes
 
-        print(current_user)
 
-        if access_token not in current_user:
-            return handler_input.response_builder.speak(speech_text).set_card(
-                SimpleCard("Facebook Authentication", speech_text)).set_should_end_session(
+        if access_token:
+            auth_token = get_auth_token(access_token)
+            session_attributes['AUTH_TOKEN'] = auth_token
+            return handler_input.response_builder.speak(speech_text_valid_acc_link).set_card(
+                SimpleCard("Facebook Authentication", speech_text_valid_acc_link)).set_should_end_session(
                 False).response
         else:
-            print(current_user.access_token)
-            auth_token = get_auth_token(current_user.access_token)
-            session_attributes['AUTH_TOKEN'] = auth_token
-            return handler_input.response_builder.speak(speech_text).set_card(
-                SimpleCard("Facebook Authentication", speech_text)).set_should_end_session(
+            return handler_input.response_builder.speak(speech_text_invalid_acc_link).set_card(
+                SimpleCard("Facebook Authentication", speech_text_invalid_acc_link)).set_should_end_session(
                 False).response
-            
-
 
 class PhoneRequestCodeIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -95,12 +92,15 @@ class PhoneRequestCodeIntentHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> Response
 
         slots = handler_input.request_envelope.request.intent.slots
+        session_attributes = handler_input.attributes_manager.session_attributes
 
         if 'PhoneNumber' in slots:
             phone_number = slots['PhoneNumber'].value
-            handler_input.attributes_manager.session_attributes['PHONE_NUMBER'] = phone_number
+            session_attributes['PHONE_NUMBER'] = phone_number
             request_code = send_phone_code(phone_number)
-            handler_input.attributes_manager.session_attributes['REQUEST_CODE'] = request_code
+            session_attributes['REQUEST_CODE'] = request_code
+        elif session_attributes['REQUEST_CODE'] == False:
+            print('here')
         else:
             speech = "I'm not sure what your phone number is, please try again"
             reprompt = ("I'm not sure what your phone number is. "
@@ -111,7 +111,7 @@ class PhoneRequestCodeIntentHandler(AbstractRequestHandler):
 
         return handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Phone Authentication", speech_text)).set_should_end_session(
-            True).response
+            False).response
 
 class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -141,7 +141,7 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
 
         return handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Phone Authentication", speech_text)).set_should_end_session(
-            True).response
+            False).response
 
 class SetLocationIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -155,21 +155,27 @@ class SetLocationIntentHandler(AbstractRequestHandler):
         slots = handler_input.request_envelope.request.intent.slots
         session_attributes = handler_input.attributes_manager.session_attributes
 
-        if 'City' in slots:
-            city = slots['City'].value
+        city = slots['City'].value
+        country = slots['Country'].value
+
+        if city is not None:
             session_attributes['CITY'] = city
             response = set_location(session_attributes['AUTH_TOKEN'], city)
+        elif country is not None:
+            session_attributes['COUNTRY'] = country
+            response = set_location(session_attributes['AUTH_TOKEN'], country)
         else:
             speech = "I'm not sure what city you asked for, please try again"
             reprompt = ("I'm not sure what city you set your location to. "
                         "You can tell me your set city location by saying, "
                         "set my location to ")
 
-        speech_text = "We set your location to {}".format(city)
+        fmt = EmptyNoneFormatter()
+        speech_text = fmt.format("We set your location to {} {}", city, country) 
 
         return handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Location Set", speech_text)).set_should_end_session(
-            True).response
+            False).response
 
 class HelpIntentHandler(AbstractRequestHandler):
     """Handler for Help Intent."""
@@ -241,6 +247,8 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
 
     def handle(self, handler_input, exception):
         # type: (HandlerInput, Exception) -> Response
+        session_attributes = handler_input.attributes_manager.session_attributes
+        print(session_attributes)
         logger.error(exception, exc_info=True)
 
         speech = "Sorry, there was some problem. Please try again!!"

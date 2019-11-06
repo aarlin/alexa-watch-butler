@@ -38,30 +38,25 @@ def get_auth_token(fb_auth_token):
     headers = {
         'app_version': '6.9.4',
         'platform': 'ios',
-        "content-type": "application/json",
-        "User-agent": "Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)",
-        "Accept": "application/json"
+        "Content-Type": "application/json",
+        "User-agent": "Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)"
     }
     if "error" in fb_auth_token:
         return {"error": "could not retrieve fb_auth_token"}
     url = 'https://api.gotinder.com/v2/auth/login/facebook'
+    data = {"token": fb_auth_token }
     req = requests.post(url,
                         headers=headers,
-                        data=json.dumps(
-                            {'token': fb_auth_token })
+                        json=data
                         )
     try:
-        if (req.json()["data"]["is_new_user"] == 'true'):
+        if 'error' in req.json():
+            return req.json()['error']
+        elif 'data' in req.json() and req.json()["data"]["is_new_user"] == 'true':
             return {"error": "Login through Tinder one time before an api token can be retrieved"}
-        tinder_auth_token = req.json()["data"]["api_token"]
-        headers.update({"X-Auth-Token": tinder_auth_token})
-        print("You have been successfully authorized!")
-        return tinder_auth_token
+        else:
+            tinder_auth_token = req.json()["data"]["api_token"]
+            return tinder_auth_token
     except Exception as e:
         print(e)
         return {"error": "Something went wrong. Sorry, but we could not authorize you."}
-
-def fb_authentication(email, password):
-    fb_access_token = get_fb_access_token(email, password)
-    auth_token = get_auth_token(fb_access_token)
-    return auth_token
