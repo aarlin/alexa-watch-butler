@@ -4,10 +4,11 @@
 # the decorators approach in skill builder.
 import logging
 
-from ask_sdk_core.skill_builder import SkillBuilder
+from ask_sdk_core.skill_builder import CustomSkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.dispatch_components import AbstractExceptionHandler
 from ask_sdk_core.utils import is_request_type, is_intent_name
+from ask_sdk_core.api_client import DefaultApiClient
 from ask_sdk_core.handler_input import HandlerInput
 
 from ask_sdk_model.ui import SimpleCard
@@ -18,7 +19,7 @@ from phone_auth import send_phone_code, get_token_through_phone
 from tinder_api import set_location
 from utils import EmptyNoneFormatter
 
-sb = SkillBuilder()
+sb = CustomSkillBuilder(api_client=DefaultApiClient())
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -31,13 +32,41 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
-        speech_text = (
-            "Welcome to Tinder Lite! "
-            "Would you like to authenicate with phone or authenticate through facebook?")
+        session_attributes = handler_input.attributes_manager.session_attributes
+        access_token = handler_input.request_envelope.context.system.user.access_token
+        user_preferences_client = handler_input.service_client_factory.get_ups_service()
 
-        return handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Hello World", speech_text)).set_should_end_session(
+        profile_mobile_number = user_preferences_client.get_profile_mobile_number()
+        phone_number = profile_mobile_number.country_code + profile_mobile_number.phone_number.replace(" ", "")
+        print(phone_number)
+
+        session_attributes['PHONE_NUMBER'] = phone_number
+
+
+        #         Host: api.amazonalexa.com
+        # Accept: application/json
+        # Authorization: Bearer MQEWY...6fnLok
+        # GET https://api.amazonalexa.com/v2/accounts/~current/settings/Profile.mobileNumber
+
+
+        if phone_number:
+            request_code = send_phone_code(phone_number)
+            session_attributes['REQUEST_CODE'] = request_code
+
+            authorized_speech_text = (
+                "Welcome to Tinder Lite! "
+                "Seems like you granted permission to view phone. What is the request code we sent you?")
+            return handler_input.response_builder.speak(authorized_speech_text).set_card(
+            SimpleCard("Hello World", authorized_speech_text)).set_should_end_session(
             False).response
+        else:
+            speech_text = (
+                "Welcome to Tinder Lite! "
+                "Would you like to authenicate with phone or authenticate through facebook?")
+
+            return handler_input.response_builder.speak(speech_text).set_card(
+                SimpleCard("Hello World", speech_text)).set_should_end_session(
+                False).response
 
 class PhoneAuthIntentHandler(AbstractRequestHandler):
     """Handler for Phone Auth Intent."""
