@@ -17,6 +17,7 @@ from ask_sdk_model import Response
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
 from tinder_api import set_location
+from alexa_api import get_permissions
 from utils import EmptyNoneFormatter
 
 sb = CustomSkillBuilder(api_client=DefaultApiClient())
@@ -34,20 +35,22 @@ class LaunchRequestHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> Response
         session_attributes = handler_input.attributes_manager.session_attributes
         access_token = handler_input.request_envelope.context.system.user.access_token
-        user_preferences_client = handler_input.service_client_factory.get_ups_service()
 
-        profile_mobile_number = user_preferences_client.get_profile_mobile_number()
-        phone_number = profile_mobile_number.country_code + profile_mobile_number.phone_number.replace(" ", "")
-        print(phone_number)
+        api_access_token = handler_input.request_envelope.context.system.api_access_token
+        api_endpoint = handler_input.request_envelope.context.system.api_endpoint
 
-        session_attributes['PHONE_NUMBER'] = phone_number
+        permissions_response = get_permissions(api_access_token, api_endpoint)
+        
+        phone_number = ''
+        if 'ACCESS_DENIED' not in permissions_response['code']:
+            print('here')
+            user_preferences_client = handler_input.service_client_factory.get_ups_service()
+            profile_mobile_number = user_preferences_client.get_profile_mobile_number()
 
+            phone_number = profile_mobile_number.country_code + profile_mobile_number.phone_number.replace(" ", "")
+            print(phone_number)
 
-        #         Host: api.amazonalexa.com
-        # Accept: application/json
-        # Authorization: Bearer MQEWY...6fnLok
-        # GET https://api.amazonalexa.com/v2/accounts/~current/settings/Profile.mobileNumber
-
+            session_attributes['PHONE_NUMBER'] = phone_number
 
         if phone_number:
             request_code = send_phone_code(phone_number)
