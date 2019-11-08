@@ -85,8 +85,15 @@
                         "Set my country to {Country}",
                         "Set my location to {Country}"
                     ]
+                },
+                {
+                    "name": "GetMatchesIntent",
+                    "slots": [],
+                    "samples": [
+                        "Get matches",
+                        "Get my matches"
+                    ]
                 }
-
             ],
             "types": []
         }

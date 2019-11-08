@@ -8,15 +8,16 @@ from ask_sdk_core.skill_builder import CustomSkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.dispatch_components import AbstractExceptionHandler
 from ask_sdk_core.utils import is_request_type, is_intent_name
+from ask_sdk_model.ui import AskForPermissionsConsentCard
 from ask_sdk_core.api_client import DefaultApiClient
 from ask_sdk_core.handler_input import HandlerInput
 
-from ask_sdk_model.ui import SimpleCard
+from ask_sdk_model.ui import SimpleCard, StandardCard
 from ask_sdk_model import Response
 
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
-from tinder_api import set_location
+from tinder_api import set_location, get_matches
 from alexa_api import get_permissions
 from utils import EmptyNoneFormatter
 
@@ -42,7 +43,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
         permissions_response = get_permissions(api_access_token, api_endpoint)
         
         phone_number = ''
-        if 'ACCESS_DENIED' not in permissions_response['code']:
+        if 'ACCESS_DENIED' not in permissions_response.values():
             print('here')
             user_preferences_client = handler_input.service_client_factory.get_ups_service()
             profile_mobile_number = user_preferences_client.get_profile_mobile_number()
@@ -57,19 +58,25 @@ class LaunchRequestHandler(AbstractRequestHandler):
             session_attributes['REQUEST_CODE'] = request_code
 
             authorized_speech_text = (
-                "Welcome to Tinder Lite! "
-                "Seems like you granted permission to view phone. What is the request code we sent you?")
+                "Welcome to Tinder Voice! "
+                "Seems like you have already granted us permission to to view your phone number. What is the request code we sent you?")
             return handler_input.response_builder.speak(authorized_speech_text).set_card(
             SimpleCard("Hello World", authorized_speech_text)).set_should_end_session(
             False).response
         else:
-            speech_text = (
-                "Welcome to Tinder Lite! "
-                "Would you like to authenicate with phone or authenticate through facebook?")
+            # speech_text = (
+            #     "Welcome to Tinder Lite! "
+            #     "Would you like to authenicate with phone or authenticate through facebook?")
+                
 
-            return handler_input.response_builder.speak(speech_text).set_card(
-                SimpleCard("Hello World", speech_text)).set_should_end_session(
-                False).response
+            # return handler_input.response_builder.speak(speech_text).set_card(
+            #     SimpleCard("Hello World", speech_text)).set_should_end_session(
+            #     False).response
+            NOTIFY_MISSING_PERMISSIONS = ("Please enable Location permissions in "
+                "the Amazon Alexa app.")
+            permissions = ["alexa::profile:mobile_number:read"]
+            return handler_input.response_builder.speak(NOTIFY_MISSING_PERMISSIONS).set_card(
+            AskForPermissionsConsentCard(permissions=permissions)).response
 
 class PhoneAuthIntentHandler(AbstractRequestHandler):
     """Handler for Phone Auth Intent."""
@@ -174,6 +181,32 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
         return handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Phone Authentication", speech_text)).set_should_end_session(
             False).response
+
+class GetMatchesIntentHandler(AbstractRequestHandler):
+    """Handler for Get Matches Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("GetMatchesIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Get Matches Intent."""
+        # type: (HandlerInput) -> Response
+        session_attributes = handler_input.attributes_manager.session_attributes
+
+        matches = get_matches(session_attributes['AUTH_TOKEN'])
+        print(matches)
+
+        speech_text = matches['name']
+        image = {
+            "smallImageUrl": matches['photos'][0]['processedFiles'][0]['url'],
+            "largeImageUrl": matches['photos'][0]['processedFiles'][0]['url']
+        }
+        print(image)
+
+        return handler_input.response_builder.speak(speech_text).set_card(
+            StandardCard(title="Location Set", text=speech_text, image=image)).set_should_end_session(
+            False).response
+
 
 class SetLocationIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -294,6 +327,7 @@ sb.add_request_handler(PhoneAuthIntentHandler())
 sb.add_request_handler(FacebookAuthIntentHandler())
 sb.add_request_handler(PhoneRequestCodeIntentHandler())
 sb.add_request_handler(PhoneAuthenticationIntentHandler())
+sb.add_request_handler(GetMatchesIntentHandler())
 sb.add_request_handler(SetLocationIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
