@@ -22,9 +22,9 @@ from ask_sdk_model import Response
 
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
-from tinder_api import set_location, get_matches
+from tinder_api import set_location, get_matches, swipe_left, swipe_right
 from alexa_api import get_permissions
-from utils import EmptyNoneFormatter, supports_display
+from utils import EmptyNoneFormatter, supports_display, get_age
 
 sb = CustomSkillBuilder(api_client=DefaultApiClient())
 
@@ -184,7 +184,7 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
                         "You can tell me your confirmation code by saying, "
                         "my confirmation code is ")
 
-        speech_text = "Okay, we have you authenticated. Where do you want to set your location to?"
+        speech_text = "Okay, we have you authenticated. Do you want matches or set your location?"
 
         return handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Phone Authentication", speech_text)).set_should_end_session(
@@ -199,12 +199,14 @@ class GetMatchesIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         """Handler for Get Matches Intent."""
         # type: (HandlerInput) -> Response
-        session_attributes = handler_input.attributes_manager.session_attributes\
+        session_attributes = handler_input.attributes_manager.session_attributes
         
         session_attributes['AUTH_TOKEN'] = '524862a8-1231-4d15-a142-86cfe7e8f675' # TODO
 
         matches = get_matches(session_attributes['AUTH_TOKEN'])
         print(matches)
+        
+        session_attributes['CURRENT_MATCH'] = matches['_id']
 
         speech_text = matches['name']
         image = {
@@ -213,13 +215,32 @@ class GetMatchesIntentHandler(AbstractRequestHandler):
         }
         print(image)
         
+        name = matches['name']
+        age = ' ' + str(get_age(matches['birth_date']))
+        bio = matches['bio']
+        photo = matches['photos'][0]['processedFiles'][0]['url']
+        try:
+            job = matches['jobs'][0]['title']['name']
+        except (IndexError, KeyError):
+            job = ''
+        
+        try:
+            company = ' @ ' + matches['jobs'][0]['company']['name']
+        except (IndexError, KeyError):
+            company = ''
+        
+        try:
+            school = matches['schools'][0]['name']
+        except (IndexError, KeyError):
+            school = ''
+        
         handler_input.response_builder.set_card(
             ui.StandardCard(
-                title="Match",
-                text="Text here",
+                title= name + age,
+                text=job + company + '\n' + school + '\n' + bio,
                 image=ui.Image(
-                    small_image_url=matches['photos'][0]['processedFiles'][0]['url'],
-                    large_image_url=matches['photos'][0]['processedFiles'][0]['url']
+                    small_image_url=photo,
+                    large_image_url=photo
                 )
             )
         )
@@ -227,19 +248,64 @@ class GetMatchesIntentHandler(AbstractRequestHandler):
         if supports_display(handler_input):
             print('here')
             img = Image(
-                sources=[ImageInstance(url=matches['photos'][0]['processedFiles'][0]['url'])])
-            title = "Match"
-            primary_text = get_plain_text_content(
-                primary_text="Some text")
+                sources=[ImageInstance(url=photo)])
+            title = name + age
+            primary_text = job + company
+            secondary_text = school
+            tertiary_text = bio
+            text_content = get_plain_text_content(
+                primary_text=primary_text, secondary_text=secondary_text, tertiary_text=tertiary_text)
             
             handler_input.response_builder.add_directive(
                 RenderTemplateDirective(
                     BodyTemplate3(
                         back_button=BackButtonBehavior.VISIBLE,
                         image=img, title=title,
-                        text_content=primary_text)))
+                        text_content=text_content)))
 
-        return handler_input.response_builder.speak(speech_text).response
+        return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
+
+class SwipeLeftIntentHandler(AbstractRequestHandler):
+    """Handler for Hello World Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("SwipeLeftIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Hello World Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        
+        print(session_attributes['CURRENT_MATCH'])
+        
+        response = swipe_left(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH'])
+        
+        speech_text = "You swiped left"
+        print('left', response)
+
+        handler_input.response_builder.speak(speech_text).ask(
+            speech_text).set_card(SimpleCard(
+                "Swipe Left", speech_text)).set_should_end_session(False)
+        return handler_input.response_builder.response
+
+class SwipeRightIntentHandler(AbstractRequestHandler):
+    """Handler for Hello World Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("SwipeRightIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Hello World Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        
+        response = swipe_right(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']) 
+        print('right', response)
+        
+        speech_text = "You swiped right"
+
+        handler_input.response_builder.speak(speech_text).ask(
+            speech_text).set_card(SimpleCard(
+                "Swipe Right", speech_text)).set_should_end_session(False)
+        return handler_input.response_builder.response
 
 class SetLocationIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -363,6 +429,8 @@ sb.add_request_handler(FacebookAuthIntentHandler())
 sb.add_request_handler(PhoneRequestCodeIntentHandler())
 sb.add_request_handler(PhoneAuthenticationIntentHandler())
 sb.add_request_handler(GetMatchesIntentHandler())
+sb.add_request_handler(SwipeLeftIntentHandler())
+sb.add_request_handler(SwipeRightIntentHandler())
 sb.add_request_handler(SetLocationIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())

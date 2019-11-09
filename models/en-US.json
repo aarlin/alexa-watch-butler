@@ -1,7 +1,7 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "tinder lite",
+            "invocationName": "tinder voice",
             "intents": [
                 {
                     "name": "AMAZON.FallbackIntent",
@@ -77,7 +77,6 @@
                         {
                             "name": "Country",
                             "type": "AMAZON.Country"
-
                         }
                     ],
                     "samples": [
@@ -93,6 +92,72 @@
                         "Get matches",
                         "Get my matches"
                     ]
+                },
+                {
+                    "name": "SwipeLeftIntent",
+                    "slots": [],
+                    "samples": [
+                        "Pass",
+                        "Skip",
+                        "Swipe left",
+                        "Left",
+                        "No",
+                        "Nope"
+                    ]
+                },
+                {
+                    "name": "SwipeRightIntent",
+                    "slots": [],
+                    "samples": [
+                        "Swipe right",
+                        "Right",
+                        "Like",
+                        "Yes"
+                    ]
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.MoreIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateSettingsIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NextIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PageUpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PageDownIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PreviousIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollRightIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollDownIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollLeftIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollUpIntent",
+                    "samples": []
                 }
             ],
             "types": []

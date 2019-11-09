@@ -1,5 +1,7 @@
 from string import Formatter
 from ask_sdk_core.handler_input import HandlerInput
+import dateutil.parser
+from datetime import date 
 
 class EmptyNoneType(object):
 
@@ -35,3 +37,21 @@ def supports_display(handler_input):
                     supported_interfaces.display is not None)
     except:
         return False
+
+def get_age(birth_date):
+    # birth_date in ISO8601 format ex. 1994-11-12T02:11:54.099Z
+    born = dateutil.parser.parse(birth_date).date()
+    today = date.today() 
+    try:  
+        birthday = born.replace(year = today.year) 
+  
+    # raised when birth date is February 29 
+    # and the current year is not a leap year 
+    except ValueError:  
+        birthday = born.replace(year = today.year, 
+                  month = born.month + 1, day = 1) 
+  
+    if birthday > today: 
+        return today.year - born.year - 1
+    else: 
+        return today.year - born.year 
