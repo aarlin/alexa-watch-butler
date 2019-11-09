@@ -11,15 +11,20 @@ from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.ui import AskForPermissionsConsentCard
 from ask_sdk_core.api_client import DefaultApiClient
 from ask_sdk_core.handler_input import HandlerInput
+from ask_sdk_core.response_helper import get_plain_text_content
 
 from ask_sdk_model.ui import SimpleCard, StandardCard
+from ask_sdk_model.interfaces.display import (
+    ImageInstance, Image, RenderTemplateDirective,
+    BackButtonBehavior, BodyTemplate3)
+from ask_sdk_model import ui
 from ask_sdk_model import Response
 
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
 from tinder_api import set_location, get_matches
 from alexa_api import get_permissions
-from utils import EmptyNoneFormatter
+from utils import EmptyNoneFormatter, supports_display
 
 sb = CustomSkillBuilder(api_client=DefaultApiClient())
 
@@ -42,6 +47,8 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
         permissions_response = get_permissions(api_access_token, api_endpoint)
         
+        session_attributes['AUTH_TOKEN'] = '524862a8-1231-4d15-a142-86cfe7e8f675' # TODO
+        
         phone_number = ''
         if 'ACCESS_DENIED' not in permissions_response.values():
             print('here')
@@ -54,12 +61,13 @@ class LaunchRequestHandler(AbstractRequestHandler):
             session_attributes['PHONE_NUMBER'] = phone_number
 
         if phone_number:
-            request_code = send_phone_code(phone_number)
+            # request_code = send_phone_code(phone_number) TODO
+            request_code = ''
             session_attributes['REQUEST_CODE'] = request_code
 
             authorized_speech_text = (
                 "Welcome to Tinder Voice! "
-                "Seems like you have already granted us permission to to view your phone number. What is the request code we sent you?")
+                "What is the request code we sent your phone number?")
             return handler_input.response_builder.speak(authorized_speech_text).set_card(
             SimpleCard("Hello World", authorized_speech_text)).set_should_end_session(
             False).response
@@ -191,7 +199,9 @@ class GetMatchesIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         """Handler for Get Matches Intent."""
         # type: (HandlerInput) -> Response
-        session_attributes = handler_input.attributes_manager.session_attributes
+        session_attributes = handler_input.attributes_manager.session_attributes\
+        
+        session_attributes['AUTH_TOKEN'] = '524862a8-1231-4d15-a142-86cfe7e8f675' # TODO
 
         matches = get_matches(session_attributes['AUTH_TOKEN'])
         print(matches)
@@ -202,11 +212,34 @@ class GetMatchesIntentHandler(AbstractRequestHandler):
             "largeImageUrl": matches['photos'][0]['processedFiles'][0]['url']
         }
         print(image)
+        
+        handler_input.response_builder.set_card(
+            ui.StandardCard(
+                title="Match",
+                text="Text here",
+                image=ui.Image(
+                    small_image_url=matches['photos'][0]['processedFiles'][0]['url'],
+                    large_image_url=matches['photos'][0]['processedFiles'][0]['url']
+                )
+            )
+        )
+        
+        if supports_display(handler_input):
+            print('here')
+            img = Image(
+                sources=[ImageInstance(url=matches['photos'][0]['processedFiles'][0]['url'])])
+            title = "Match"
+            primary_text = get_plain_text_content(
+                primary_text="Some text")
+            
+            handler_input.response_builder.add_directive(
+                RenderTemplateDirective(
+                    BodyTemplate3(
+                        back_button=BackButtonBehavior.VISIBLE,
+                        image=img, title=title,
+                        text_content=primary_text)))
 
-        return handler_input.response_builder.speak(speech_text).set_card(
-            StandardCard(title="Location Set", text=speech_text, image=image)).set_should_end_session(
-            False).response
-
+        return handler_input.response_builder.speak(speech_text).response
 
 class SetLocationIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -222,6 +255,8 @@ class SetLocationIntentHandler(AbstractRequestHandler):
 
         city = slots['City'].value
         country = slots['Country'].value
+        
+        print(city, country)
 
         if city is not None:
             session_attributes['CITY'] = city

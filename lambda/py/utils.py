@@ -1,4 +1,5 @@
 from string import Formatter
+from ask_sdk_core.handler_input import HandlerInput
 
 class EmptyNoneType(object):
 
@@ -21,3 +22,16 @@ class EmptyNoneFormatter(Formatter):
         if v is None:
             return EmptyNoneType()
         return v
+
+def supports_display(handler_input):
+    # type: (HandlerInput) -> bool
+    """Check if display is supported by the skill."""
+    try:
+        if hasattr(
+                handler_input.request_envelope.context.system.device.
+                        supported_interfaces, 'display'):
+            return (
+                    handler_input.request_envelope.context.system.device.
+                    supported_interfaces.display is not None)
+    except:
+        return False
