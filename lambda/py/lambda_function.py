@@ -22,7 +22,7 @@ from ask_sdk_model import Response
 
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
-from tinder_api import set_location, get_matches, swipe_left, swipe_right
+from tinder_api import set_location, get_matches, swipe_left, swipe_right, get_profile, super_like
 from alexa_api import get_permissions
 from utils import EmptyNoneFormatter, supports_display, get_age
 
@@ -47,7 +47,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
         permissions_response = get_permissions(api_access_token, api_endpoint)
         
-        session_attributes['AUTH_TOKEN'] = '524862a8-1231-4d15-a142-86cfe7e8f675' # TODO
+        session_attributes['AUTH_TOKEN'] = '3ac77b1f-0e7b-45b2-bfdf-cfb23a4029e9' # TODO
         
         phone_number = ''
         if 'ACCESS_DENIED' not in permissions_response.values():
@@ -201,7 +201,7 @@ class GetMatchesIntentHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> Response
         session_attributes = handler_input.attributes_manager.session_attributes
         
-        session_attributes['AUTH_TOKEN'] = '524862a8-1231-4d15-a142-86cfe7e8f675' # TODO
+        session_attributes['AUTH_TOKEN'] = '3ac77b1f-0e7b-45b2-bfdf-cfb23a4029e9' # TODO
 
         matches = get_matches(session_attributes['AUTH_TOKEN'])
         print(matches)
@@ -306,6 +306,30 @@ class SwipeRightIntentHandler(AbstractRequestHandler):
             speech_text).set_card(SimpleCard(
                 "Swipe Right", speech_text)).set_should_end_session(False)
         return handler_input.response_builder.response
+
+class SuperLikeIntentHandler(AbstractRequestHandler):
+    """Handler for Super Like Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("SuperLikeIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Super Like Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        
+        response = super_like(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']) 
+        print('super like', response)
+        
+        speech_text = "You super liked {}".format(session_attributes['CURRENT_MATCH'])
+        
+        if 'limit_exceeded' in response.keys():
+            speech_text = 'You do not have any super likes. Your super like resets at {}'.format(response['super_likes']['resets_at'])
+
+        handler_input.response_builder.speak(speech_text).ask(
+            speech_text).set_card(SimpleCard(
+                "Super Like", speech_text)).set_should_end_session(False)
+        return handler_input.response_builder.response
+    
 
 class SetLocationIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -431,6 +455,7 @@ sb.add_request_handler(PhoneAuthenticationIntentHandler())
 sb.add_request_handler(GetMatchesIntentHandler())
 sb.add_request_handler(SwipeLeftIntentHandler())
 sb.add_request_handler(SwipeRightIntentHandler())
+sb.add_request_handler(SuperLikeIntentHandler())
 sb.add_request_handler(SetLocationIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
