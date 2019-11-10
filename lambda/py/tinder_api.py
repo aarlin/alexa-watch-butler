@@ -1,6 +1,7 @@
 import json
 import requests
 from geopy.geocoders import Nominatim
+from utils import get_age, extract_user_data
 
 def set_location(auth_token, location):
     location_headers = {
@@ -24,7 +25,7 @@ def set_location(auth_token, location):
     print(response)
     return response
 
-def get_matches(auth_token):
+def get_recommendations(auth_token):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
@@ -36,7 +37,9 @@ def get_matches(auth_token):
     r = requests.get(URL, headers=headers, verify=True)
     response = r.json()
     print(response)
-    return response['results'][0]
+        
+    return [extract_user_data(user) for user in response['results']]
+
 
 def swipe_left(auth_token, id):
     headers = {
@@ -45,7 +48,7 @@ def swipe_left(auth_token, id):
       'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
     
-    URL = 'https://api.gotinder.com/like/{}'.format(id)
+    URL = 'https://api.gotinder.com/pass/{}'.format(id)
     print(URL)
     
     r = requests.get(URL, headers=headers, verify=True)
@@ -60,7 +63,8 @@ def swipe_right(auth_token, id):
       'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
     
-    URL = 'https://api.gotinder.com/pass/{}'.format(id)
+    URL = 'https://api.gotinder.com/like/{}'.format(id)
+    print(URL)
     
     r = requests.get(URL, headers=headers, verify=True)
     response = r.json()
@@ -75,6 +79,7 @@ def super_like(auth_token, id):
     }
     
     URL = 'https://api.gotinder.com/like/{}/super'.format(id)
+    print(URL)
     
     r = requests.post(URL, headers=headers, verify=True)
     response = r.json()

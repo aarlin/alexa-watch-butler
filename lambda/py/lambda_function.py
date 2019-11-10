@@ -17,12 +17,16 @@ from ask_sdk_model.ui import SimpleCard, StandardCard
 from ask_sdk_model.interfaces.display import (
     ImageInstance, Image, RenderTemplateDirective,
     BackButtonBehavior, BodyTemplate3)
+from ask_sdk_model.interfaces.audioplayer import (
+    PlayDirective, PlayBehavior, AudioItem, Stream, AudioItemMetadata,
+    StopDirective)
+from ask_sdk_model.interfaces import display
 from ask_sdk_model import ui
 from ask_sdk_model import Response
 
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
-from tinder_api import set_location, get_matches, swipe_left, swipe_right, get_profile, super_like
+from tinder_api import set_location, get_recommendations, swipe_left, swipe_right, get_profile, super_like
 from alexa_api import get_permissions
 from utils import EmptyNoneFormatter, supports_display, get_age
 
@@ -190,11 +194,11 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
             SimpleCard("Phone Authentication", speech_text)).set_should_end_session(
             False).response
 
-class GetMatchesIntentHandler(AbstractRequestHandler):
+class GetRecommendationsIntentHandler(AbstractRequestHandler):
     """Handler for Get Matches Intent."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
-        return is_intent_name("GetMatchesIntent")(handler_input)
+        return is_intent_name("GetRecommendationsIntent")(handler_input)
 
     def handle(self, handler_input):
         """Handler for Get Matches Intent."""
@@ -203,56 +207,77 @@ class GetMatchesIntentHandler(AbstractRequestHandler):
         
         session_attributes['AUTH_TOKEN'] = '3ac77b1f-0e7b-45b2-bfdf-cfb23a4029e9' # TODO
 
-        matches = get_matches(session_attributes['AUTH_TOKEN'])
-        print(matches)
+        if 'RECOMMENDATIONS' not in session_attributes or not session_attributes['RECOMMENDATIONS']:
+            recommendations = get_recommendations(session_attributes['AUTH_TOKEN'])
+            print(recommendations)
+            session_attributes['RECOMMENDATIONS'] = recommendations
+            
         
-        session_attributes['CURRENT_MATCH'] = matches['_id']
+        print(session_attributes['RECOMMENDATIONS'])
+        user = session_attributes['RECOMMENDATIONS'].pop()
+        print(len(session_attributes['RECOMMENDATIONS']))
+        print(user)
+        print(session_attributes['RECOMMENDATIONS'])
+        
+        session_attributes['CURRENT_MATCH'] = { "id": user['id'], "name": user['name'] }
 
-        speech_text = matches['name']
+        speech_text = user['name']
+        
+        if isinstance(self, SwipeLeftIntentHandler):
+            speech_text = 'Swiped left. Your next match is ' + user['name']
+        elif isinstance(self, SwipeRightIntentHandler):
+            speech_text = 'Swiped right. Your next match is ' + user['name']
+        elif isinstance(self, SuperLikeIntentHandler):
+            speech_text = 'Super liked. Your next match is ' + user['name']
+        
         image = {
-            "smallImageUrl": matches['photos'][0]['processedFiles'][0]['url'],
-            "largeImageUrl": matches['photos'][0]['processedFiles'][0]['url']
+            "smallImageUrl": user['photo'],
+            "largeImageUrl": user['photo']
         }
         print(image)
         
-        name = matches['name']
-        age = ' ' + str(get_age(matches['birth_date']))
-        bio = matches['bio']
-        photo = matches['photos'][0]['processedFiles'][0]['url']
-        try:
-            job = matches['jobs'][0]['title']['name']
-        except (IndexError, KeyError):
-            job = ''
-        
-        try:
-            company = ' @ ' + matches['jobs'][0]['company']['name']
-        except (IndexError, KeyError):
-            company = ''
-        
-        try:
-            school = matches['schools'][0]['name']
-        except (IndexError, KeyError):
-            school = ''
-        
         handler_input.response_builder.set_card(
             ui.StandardCard(
-                title= name + age,
-                text=job + company + '\n' + school + '\n' + bio,
+                title= user['name'] + ' ' + user['age'],
+                text= user['job'] + ' ' + user['company'] + '\n' + user['school'] + '\n' + user['bio'],
                 image=ui.Image(
-                    small_image_url=photo,
-                    large_image_url=photo
+                    small_image_url=user['photo'],
+                    large_image_url=user['photo']
+                )
+            )
+        )
+        
+        en_us_audio_data = {
+            "card": {
+        "title": 'My Radio',
+        "text": 'Less bla bla bla, more la la la',
+        "small_image_url": 'https://alexademo.ninja/skills/logo-108.png',
+        "large_image_url": 'https://alexademo.ninja/skills/logo-512.png'
+        },
+        "url": 'https://audio1.maxi80.com',
+        "start_jingle": 'https://s3-eu-west-1.amazonaws.com/alexa.maxi80.com/assets/jingle.m4a'
+        }
+        
+        audio_directive = PlayDirective(
+            play_behavior=PlayBehavior.REPLACE_ALL,
+            audio_item=AudioItem(
+                stream=Stream(
+                    expected_previous_token=None,
+                    token='https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3',
+                    url='https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3',
+                    offset_in_milliseconds=0
                 )
             )
         )
         
         if supports_display(handler_input):
-            print('here')
+            print('supports display on match intent')
             img = Image(
-                sources=[ImageInstance(url=photo)])
-            title = name + age
-            primary_text = job + company
-            secondary_text = school
-            tertiary_text = bio
+                sources=[ImageInstance(url=user['photo'])])
+            title = user['name'] + ' ' + user['age']
+            primary_text = user['job'] + ' ' + user['company']
+            secondary_text = user['school']
+            tertiary_text = user['bio']
             text_content = get_plain_text_content(
                 primary_text=primary_text, secondary_text=secondary_text, tertiary_text=tertiary_text)
             
@@ -262,8 +287,11 @@ class GetMatchesIntentHandler(AbstractRequestHandler):
                         back_button=BackButtonBehavior.VISIBLE,
                         image=img, title=title,
                         text_content=text_content)))
+        handler_input.response_builder.add_directive(audio_directive)    
+                        
+        reprompt = ('What did you want to do? You can tell me swipe left, swipe right, super like, or see profile')
 
-        return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
+        return handler_input.response_builder.speak(speech_text).ask(reprompt).set_should_end_session(False).response
 
 class SwipeLeftIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -277,15 +305,11 @@ class SwipeLeftIntentHandler(AbstractRequestHandler):
         
         print(session_attributes['CURRENT_MATCH'])
         
-        response = swipe_left(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH'])
+        response = swipe_left(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id'])
         
-        speech_text = "You swiped left"
         print('left', response)
 
-        handler_input.response_builder.speak(speech_text).ask(
-            speech_text).set_card(SimpleCard(
-                "Swipe Left", speech_text)).set_should_end_session(False)
-        return handler_input.response_builder.response
+        return GetRecommendationsIntentHandler.handle(self, handler_input)
 
 class SwipeRightIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
@@ -297,15 +321,10 @@ class SwipeRightIntentHandler(AbstractRequestHandler):
         """Handler for Hello World Intent."""
         session_attributes = handler_input.attributes_manager.session_attributes
         
-        response = swipe_right(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']) 
+        response = swipe_right(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
         print('right', response)
-        
-        speech_text = "You swiped right"
 
-        handler_input.response_builder.speak(speech_text).ask(
-            speech_text).set_card(SimpleCard(
-                "Swipe Right", speech_text)).set_should_end_session(False)
-        return handler_input.response_builder.response
+        return GetRecommendationsIntentHandler.handle(self, handler_input)
 
 class SuperLikeIntentHandler(AbstractRequestHandler):
     """Handler for Super Like Intent."""
@@ -317,10 +336,10 @@ class SuperLikeIntentHandler(AbstractRequestHandler):
         """Handler for Super Like Intent."""
         session_attributes = handler_input.attributes_manager.session_attributes
         
-        response = super_like(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']) 
+        response = super_like(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
         print('super like', response)
         
-        speech_text = "You super liked {}".format(session_attributes['CURRENT_MATCH'])
+        speech_text = "You super liked {}".format(session_attributes['CURRENT_MATCH']['name'])
         
         if 'limit_exceeded' in response.keys():
             speech_text = 'You do not have any super likes. Your super like resets at {}'.format(response['super_likes']['resets_at'])
@@ -452,7 +471,7 @@ sb.add_request_handler(PhoneAuthIntentHandler())
 sb.add_request_handler(FacebookAuthIntentHandler())
 sb.add_request_handler(PhoneRequestCodeIntentHandler())
 sb.add_request_handler(PhoneAuthenticationIntentHandler())
-sb.add_request_handler(GetMatchesIntentHandler())
+sb.add_request_handler(GetRecommendationsIntentHandler())
 sb.add_request_handler(SwipeLeftIntentHandler())
 sb.add_request_handler(SwipeRightIntentHandler())
 sb.add_request_handler(SuperLikeIntentHandler())

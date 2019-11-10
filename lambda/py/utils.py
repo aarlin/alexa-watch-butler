@@ -44,14 +44,45 @@ def get_age(birth_date):
     today = date.today() 
     try:  
         birthday = born.replace(year = today.year) 
-  
     # raised when birth date is February 29 
     # and the current year is not a leap year 
     except ValueError:  
         birthday = born.replace(year = today.year, 
-                  month = born.month + 1, day = 1) 
-  
+        month = born.month + 1, day = 1) 
     if birthday > today: 
         return today.year - born.year - 1
     else: 
         return today.year - born.year 
+
+def extract_user_data(user):
+    id = user['_id']
+    name = user['name']
+    photo = user['photos'][0]['processedFiles'][0]['url']
+    age = str(get_age(user['birth_date']))
+    bio = user['bio']
+    try:
+        job = user['jobs'][0]['title']['name']
+    except (IndexError, KeyError):
+        job = ''
+    
+    try:
+        company = user['jobs'][0]['company']['name']
+    except (IndexError, KeyError):
+        company = ''
+    
+    try:
+        school = user['schools'][0]['name']
+    except (IndexError, KeyError):
+        school = ''
+        
+    return {"id": id, "name": name, "photo": photo, "age": age, "bio": bio, "job": job, "company": company, "school": school}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
