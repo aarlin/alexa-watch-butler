@@ -1,7 +1,7 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "Tinder Lite",
+            "invocationName": "tinder voice",
             "intents": [
                 {
                     "name": "AMAZON.FallbackIntent",
@@ -25,7 +25,18 @@
                     "samples": [
                         "authenticate with phone",
                         "authenticate through phone",
-                        "phone authentication"
+                        "phone authentication",
+                        "phone"
+                    ]
+                },
+                {
+                    "name": "FacebookAuthIntent",
+                    "slots": [],
+                    "samples": [
+                        "authenticate with facebook",
+                        "authenticate through facebook",
+                        "facebook authentication",
+                        "facebook"
                     ]
                 },
                 {
@@ -37,19 +48,23 @@
                         }
                     ],
                     "samples": [
-                        "My phone number is {PhoneNumber}"
+                        "My phone number is {PhoneNumber}",
+                        "{PhoneNumber}"
                     ]
                 },
                 {
                     "name": "PhoneAuthenticationIntent",
                     "slots": [
                         {
-                            "name": "RequestCode",
+                            "name": "SMSCode",
                             "type": "AMAZON.NUMBER"
                         }
                     ],
                     "samples": [
-                        "My request code is {RequestCode}"
+                        "My code is {SMSCode}",
+                        "My request code is {SMSCode}",
+                        "Request code is {SMSCode}",
+                        "{SMSCode}"
                     ]
                 },
                 {
@@ -58,13 +73,92 @@
                         {
                             "name": "City",
                             "type": "AMAZON.US_CITY"
+                        },
+                        {
+                            "name": "Country",
+                            "type": "AMAZON.Country"
                         }
                     ],
                     "samples": [
-                        "Set my location to {City}"
+                        "Set my location to {City}",
+                        "Set my country to {Country}",
+                        "Set my location to {Country}"
                     ]
+                },
+                {
+                    "name": "GetMatchesIntent",
+                    "slots": [],
+                    "samples": [
+                        "Get matches",
+                        "Get my matches"
+                    ]
+                },
+                {
+                    "name": "SwipeLeftIntent",
+                    "slots": [],
+                    "samples": [
+                        "Pass",
+                        "Skip",
+                        "Swipe left",
+                        "Left",
+                        "No",
+                        "Nope"
+                    ]
+                },
+                {
+                    "name": "SwipeRightIntent",
+                    "slots": [],
+                    "samples": [
+                        "Swipe right",
+                        "Right",
+                        "Like",
+                        "Yes"
+                    ]
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.MoreIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateSettingsIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NextIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PageUpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PageDownIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PreviousIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollRightIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollDownIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollLeftIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollUpIntent",
+                    "samples": []
                 }
-
             ],
             "types": []
         }
