@@ -16,14 +16,15 @@ def set_location(auth_token, location):
     location_data = geolocator.geocode(location)
     
     data = {
-    "lat": location_data.latitude,
-    "lon": location_data.longitude
+        "lat": location_data.latitude,
+        "lon": location_data.longitude
     }
     
     r = requests.post(URL, headers=location_headers, data=json.dumps(data), verify=True)
     response = r.json()
+    print('location')
     print(response)
-    return response
+    return data
 
 def get_recommendations(auth_token):
     headers = {

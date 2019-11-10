@@ -370,9 +370,11 @@ class SetLocationIntentHandler(AbstractRequestHandler):
         if city is not None:
             session_attributes['CITY'] = city
             response = set_location(session_attributes['AUTH_TOKEN'], city)
+            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key=API_KEY&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'])
         elif country is not None:
             session_attributes['COUNTRY'] = country
             response = set_location(session_attributes['AUTH_TOKEN'], country)
+            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key=API_KEY&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'])
         else:
             speech = "I'm not sure what city you asked for, please try again"
             reprompt = ("I'm not sure what city you set your location to. "
@@ -381,10 +383,19 @@ class SetLocationIntentHandler(AbstractRequestHandler):
 
         fmt = EmptyNoneFormatter()
         speech_text = fmt.format("We set your location to {} {}", city, country) 
+        
+        handler_input.response_builder.set_card(
+            ui.StandardCard(
+                title="Set Location",
+                text= speech_text,
+                image=ui.Image(
+                    small_image_url=map_location,
+                    large_image_url=map_location
+                )
+            )
+        )
 
-        return handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Location Set", speech_text)).set_should_end_session(
-            False).response
+        return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
 
 class HelpIntentHandler(AbstractRequestHandler):
     """Handler for Help Intent."""
