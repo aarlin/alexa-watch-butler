@@ -2,6 +2,7 @@ from string import Formatter
 from ask_sdk_core.handler_input import HandlerInput
 import dateutil.parser
 from datetime import date 
+import re
 
 class EmptyNoneType(object):
 
@@ -56,10 +57,12 @@ def get_age(birth_date):
 
 def extract_user_data(user):
     id = user['_id']
-    name = user['name']
+    name = sanitize_information(user['name'])
     photo = user['photos'][0]['processedFiles'][0]['url']
     age = str(get_age(user['birth_date']))
-    bio = user['bio']
+    print(type(user['bio']))
+    bio = sanitize_information(user['bio'])
+    print(type(bio))
     try:
         job = user['jobs'][0]['title']['name']
     except (IndexError, KeyError):
@@ -75,14 +78,8 @@ def extract_user_data(user):
     except (IndexError, KeyError):
         school = ''
         
-    return {"id": id, "name": name, "photo": photo, "age": age, "bio": bio, "job": job, "company": company, "school": school}
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    user_data = {"id": id, "name": name, "photo": photo, "age": age, "bio": bio, "job": job, "company": company, "school": school}
+    return user_data
+
+def sanitize_information(information):
+    return re.sub('&', 'and', str(information))
