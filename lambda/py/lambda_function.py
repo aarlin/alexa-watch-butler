@@ -3,26 +3,28 @@
 # This is a simple Hello World Alexa Skill, built using
 # the decorators approach in skill builder.
 import logging
+import os
 
 from ask_sdk_core.skill_builder import CustomSkillBuilder
-from ask_sdk_core.dispatch_components import AbstractRequestHandler
-from ask_sdk_core.dispatch_components import AbstractExceptionHandler
+from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.ui import AskForPermissionsConsentCard
 from ask_sdk_core.api_client import DefaultApiClient
 from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_core.response_helper import get_plain_text_content
+from ask_sdk_dynamodb.adapter import DynamoDbAdapter
 
 from ask_sdk_model.ui import SimpleCard, StandardCard
 from ask_sdk_model.interfaces.display import (
     ImageInstance, Image, RenderTemplateDirective,
-    BackButtonBehavior, BodyTemplate3)
+    BackButtonBehavior, BodyTemplate3, BodyTemplate7)
 from ask_sdk_model.interfaces.audioplayer import (
     PlayDirective, PlayBehavior, AudioItem, Stream, AudioItemMetadata,
     StopDirective)
 from ask_sdk_model.interfaces import display
 from ask_sdk_model import ui
 from ask_sdk_model import Response
+from ask_sdk_s3.adapter import S3Adapter
 
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
@@ -30,13 +32,15 @@ from tinder_api import set_location, get_recommendations, swipe_left, swipe_righ
 from alexa_api import get_permissions
 from utils import EmptyNoneFormatter, supports_display, get_age
 
-sb = CustomSkillBuilder(api_client=DefaultApiClient())
+s3_adapter = S3Adapter(bucket_name=os.environ.get('S3_PERSISTENCE_BUCKET'))
+
+sb = CustomSkillBuilder(api_client=DefaultApiClient(), persistence_adapter=s3_adapter)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class LaunchRequestHandler(AbstractRequestHandler):
-    """Handler for Skill Launch."""
+    """Handler for Launch Request."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         return is_request_type("LaunchRequest")(handler_input)
@@ -45,36 +49,38 @@ class LaunchRequestHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> Response
         session_attributes = handler_input.attributes_manager.session_attributes
         access_token = handler_input.request_envelope.context.system.user.access_token
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
 
         api_access_token = handler_input.request_envelope.context.system.api_access_token
         api_endpoint = handler_input.request_envelope.context.system.api_endpoint
 
         permissions_response = get_permissions(api_access_token, api_endpoint)
         
-        session_attributes['AUTH_TOKEN'] = '3ac77b1f-0e7b-45b2-bfdf-cfb23a4029e9' # TODO
-        
         phone_number = ''
         if 'ACCESS_DENIED' not in permissions_response.values():
-            print('here')
             user_preferences_client = handler_input.service_client_factory.get_ups_service()
             profile_mobile_number = user_preferences_client.get_profile_mobile_number()
 
-            phone_number = profile_mobile_number.country_code + profile_mobile_number.phone_number.replace(" ", "")
-            print(phone_number)
+            session_attributes['PHONE_NUMBER'] = profile_mobile_number.country_code + profile_mobile_number.phone_number.replace(" ", "")
+            
+            if 'AUTH_TOKEN' not in persistence_attributes:
+                request_code = send_phone_code(session_attributes['PHONE_NUMBER'])
+                session_attributes['REQUEST_CODE'] = request_code
 
-            session_attributes['PHONE_NUMBER'] = phone_number
+                authorized_speech_text = (
+                    "Welcome to Tinder Voice! "
+                    "What is the request code we sent your phone number?")
+                return handler_input.response_builder.speak(authorized_speech_text).set_card(
+                SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
+                False).response
+            elif session_attributes['PHONE_NUMBER'] and persistence_attributes['AUTH_TOKEN']:
+                authorized_speech_text = (
+                    "Welcome to Tinder Voice! "
+                    "Would you like to get profiles or set your location?")
+                return handler_input.response_builder.speak(authorized_speech_text).set_card(
+                SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
+                False).response
 
-        if phone_number:
-            # request_code = send_phone_code(phone_number) TODO
-            request_code = ''
-            session_attributes['REQUEST_CODE'] = request_code
-
-            authorized_speech_text = (
-                "Welcome to Tinder Voice! "
-                "What is the request code we sent your phone number?")
-            return handler_input.response_builder.speak(authorized_speech_text).set_card(
-            SimpleCard("Hello World", authorized_speech_text)).set_should_end_session(
-            False).response
         else:
             # speech_text = (
             #     "Welcome to Tinder Lite! "
@@ -112,18 +118,18 @@ class FacebookAuthIntentHandler(AbstractRequestHandler):
         return is_intent_name("FacebookAuthIntent")(handler_input)
 
     def handle(self, handler_input):
-        """Handler for Skill Launch."""
+        """Handler for Facebook Auth Intent."""
         # type: (HandlerInput) -> Response
         speech_text_invalid_acc_link = "To access Tinder, please setup account linking."
         speech_text_valid_acc_link = "We have you authenticated. Where do you want to set your location to?"
         
         access_token = handler_input.request_envelope.context.system.user.access_token
         session_attributes = handler_input.attributes_manager.session_attributes
-
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
 
         if access_token:
             auth_token = get_auth_token(access_token)
-            session_attributes['AUTH_TOKEN'] = auth_token
+            persistence_attributes['AUTH_TOKEN'] = auth_token
             return handler_input.response_builder.speak(speech_text_valid_acc_link).set_card(
                 SimpleCard("Facebook Authentication", speech_text_valid_acc_link)).set_should_end_session(
                 False).response
@@ -133,13 +139,13 @@ class FacebookAuthIntentHandler(AbstractRequestHandler):
                 False).response
 
 class PhoneRequestCodeIntentHandler(AbstractRequestHandler):
-    """Handler for Hello World Intent."""
+    """Handler for Phone Request Intent."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         return is_intent_name("PhoneRequestCodeIntent")(handler_input)
 
     def handle(self, handler_input):
-        """Handler for Phone Authentication Intent."""
+        """Handler for Phone Request Intent."""
         # type: (HandlerInput) -> Response
 
         slots = handler_input.request_envelope.request.intent.slots
@@ -165,7 +171,7 @@ class PhoneRequestCodeIntentHandler(AbstractRequestHandler):
             False).response
 
 class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
-    """Handler for Hello World Intent."""
+    """Handler for Phone Authentication Intent."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         return is_intent_name("PhoneAuthenticationIntent")(handler_input)
@@ -175,13 +181,18 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> Response
         slots = handler_input.request_envelope.request.intent.slots
         session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
 
         if 'SMSCode' in slots:
             sms_code = slots['SMSCode'].value
             session_attributes['SMS_CODE'] = sms_code
             auth_token = get_token_through_phone(sms_code, session_attributes['PHONE_NUMBER'], session_attributes['REQUEST_CODE'])
-
-            session_attributes['AUTH_TOKEN'] = auth_token
+            
+            persistence_attributes['AUTH_TOKEN'] = auth_token
+            handler_input.attributes_manager.save_persistent_attributes()
+            print(persistence_attributes)
+            print(persistence_attributes['AUTH_TOKEN'])
+            
         else:
             speech = "I'm not sure what your confirmation code is, please try again"
             reprompt = ("I'm not sure what your confirmation code is. "
@@ -195,40 +206,154 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
             False).response
 
 class GetRecommendationsIntentHandler(AbstractRequestHandler):
-    """Handler for Get Matches Intent."""
+    """Handler for Get Recommendations Intent."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         return is_intent_name("GetRecommendationsIntent")(handler_input)
 
     def handle(self, handler_input):
-        """Handler for Get Matches Intent."""
+        """Handler for Get Recommendations Intent."""
         # type: (HandlerInput) -> Response
         session_attributes = handler_input.attributes_manager.session_attributes
-        
-        session_attributes['AUTH_TOKEN'] = '3ac77b1f-0e7b-45b2-bfdf-cfb23a4029e9' # TODO
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
 
         if 'RECOMMENDATIONS' not in session_attributes or not session_attributes['RECOMMENDATIONS']:
-            recommendations = get_recommendations(session_attributes['AUTH_TOKEN'])
+            recommendations = get_recommendations(persistence_attributes['AUTH_TOKEN'])
             print(recommendations)
             session_attributes['RECOMMENDATIONS'] = recommendations
             
-        
-        print(session_attributes['RECOMMENDATIONS'])
+        # session_attributes['PREVIOUS_MATCH'] = session_attributes.get('CURRENT_MATCH', '')
+        # print('previous', session_attributes['PREVIOUS_MATCH'])
         user = session_attributes['RECOMMENDATIONS'].pop()
-        print(len(session_attributes['RECOMMENDATIONS']))
+        session_attributes['CURRENT_MATCH'] = user
+        
         print(user)
-        print(session_attributes['RECOMMENDATIONS'])
         
-        session_attributes['CURRENT_MATCH'] = { "id": user['id'], "name": user['name'] }
 
-        speech_text = user['name']
-        
         if isinstance(self, SwipeLeftIntentHandler):
-            speech_text = 'Swiped left. Your next match is ' + user['name']
+            print('swipe left here')
+            speech_text = 'Swiped left. Your next match is {}. {} years old. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
         elif isinstance(self, SwipeRightIntentHandler):
-            speech_text = 'Swiped right. Your next match is ' + user['name']
+            speech_text = 'Swiped right. Your next match is {}. {} years old. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
         elif isinstance(self, SuperLikeIntentHandler):
-            speech_text = 'Super liked. Your next match is ' + user['name']
+            speech_text = 'Super liked. Your next match is {}. {} years old. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
+        else:
+            speech_text = "{}. {} years old. Bio reads: {}".format(user['name'], user['age'], user['bio']) 
+        
+        
+        image = {
+            "smallImageUrl": user['photo'],
+            "largeImageUrl": user['photo']
+        }
+        
+        handler_input.response_builder.set_card(
+            ui.StandardCard(
+                title= user['name'] + ' ' + user['age'],
+                text= user['job'] + ' ' + user['company'] + '\n' + user['school'] + '\n' + user['bio'],
+                image=ui.Image(
+                    small_image_url=user['photo'],
+                    large_image_url=user['photo']
+                )
+            )
+        )
+        
+        if supports_display(handler_input):
+            print('supports display on match intent')
+            img = Image(
+                sources=[ImageInstance(url=user['photo'])])
+            title = user['name'] + ' ' + user['age']
+            primary_text = user['job'] + ' ' + user['company']
+            secondary_text = user['school']
+            tertiary_text = user['bio']
+            text_content = get_plain_text_content(
+                primary_text=primary_text, secondary_text=secondary_text, tertiary_text=tertiary_text)
+                
+            print(img, title, primary_text, secondary_text, tertiary_text)
+            
+            handler_input.response_builder.add_directive(
+                RenderTemplateDirective(
+                    BodyTemplate3(
+                        back_button=BackButtonBehavior.VISIBLE,
+                        image=img, title=title,
+                        text_content=text_content)))
+                        
+        reprompt = ('What did you want to do? You can tell me swipe left, swipe right, super like, or see profile')
+
+        return handler_input.response_builder.speak(speech_text).ask(reprompt).set_should_end_session(False).response
+
+class SwipeLeftIntentHandler(AbstractRequestHandler):
+    """Handler for Swipe Left Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("SwipeLeftIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Swipe Left Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
+        
+        print(session_attributes['CURRENT_MATCH'])
+        
+        response = swipe_left(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id'])
+        
+        print('left', response)
+
+        return GetRecommendationsIntentHandler.handle(self, handler_input)
+
+class SwipeRightIntentHandler(AbstractRequestHandler):
+    """Handler for Swipe Right Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("SwipeRightIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Swipe Right Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
+        
+        response = swipe_right(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
+        print('right', response)
+
+        return GetRecommendationsIntentHandler.handle(self, handler_input)
+
+class SuperLikeIntentHandler(AbstractRequestHandler):
+    """Handler for Super Like Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("SuperLikeIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Super Like Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
+        
+        response = super_like(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
+        print('super like', response)
+        
+        speech_text = "You super liked {}".format(session_attributes['CURRENT_MATCH']['name'])
+        
+        if 'limit_exceeded' in response.keys():
+            speech_text = 'You do not have any super likes. Your super like resets at {}'.format(response['super_likes']['resets_at'])
+
+        handler_input.response_builder.speak(speech_text).ask(
+            speech_text).set_card(SimpleCard(
+                "Super Like", speech_text)).set_should_end_session(False)
+        return handler_input.response_builder.response
+    
+class RewindIntentHandler(AbstractRequestHandler):
+    """Handler for Rewind Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("RewindIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Rewind Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        user = session_attributes['PREVIOUS_MATCH']
+        session_attributes['NEXT_MATCH'] = session_attributes['CURRENT_MATCH']
+        session_attributes['CURRENT_MATCH'] = user
+        
+        speech_text = "{}. {} years old. Bio reads: {}".format(user['name'], user['age'], user['bio']) 
         
         image = {
             "smallImageUrl": user['photo'],
@@ -243,29 +368,6 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
                 image=ui.Image(
                     small_image_url=user['photo'],
                     large_image_url=user['photo']
-                )
-            )
-        )
-        
-        en_us_audio_data = {
-            "card": {
-        "title": 'My Radio',
-        "text": 'Less bla bla bla, more la la la',
-        "small_image_url": 'https://alexademo.ninja/skills/logo-108.png',
-        "large_image_url": 'https://alexademo.ninja/skills/logo-512.png'
-        },
-        "url": 'https://audio1.maxi80.com',
-        "start_jingle": 'https://s3-eu-west-1.amazonaws.com/alexa.maxi80.com/assets/jingle.m4a'
-        }
-        
-        audio_directive = PlayDirective(
-            play_behavior=PlayBehavior.REPLACE_ALL,
-            audio_item=AudioItem(
-                stream=Stream(
-                    expected_previous_token=None,
-                    token='https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3',
-                    url='https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3',
-                    offset_in_milliseconds=0
                 )
             )
         )
@@ -287,80 +389,24 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
                         back_button=BackButtonBehavior.VISIBLE,
                         image=img, title=title,
                         text_content=text_content)))
-        handler_input.response_builder.add_directive(audio_directive)    
+        # handler_input.response_builder.add_directive(audio_directive)    
                         
         reprompt = ('What did you want to do? You can tell me swipe left, swipe right, super like, or see profile')
 
         return handler_input.response_builder.speak(speech_text).ask(reprompt).set_should_end_session(False).response
 
-class SwipeLeftIntentHandler(AbstractRequestHandler):
-    """Handler for Hello World Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return is_intent_name("SwipeLeftIntent")(handler_input)
-
-    def handle(self, handler_input):
-        """Handler for Hello World Intent."""
-        session_attributes = handler_input.attributes_manager.session_attributes
-        
-        print(session_attributes['CURRENT_MATCH'])
-        
-        response = swipe_left(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id'])
-        
-        print('left', response)
-
-        return GetRecommendationsIntentHandler.handle(self, handler_input)
-
-class SwipeRightIntentHandler(AbstractRequestHandler):
-    """Handler for Hello World Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return is_intent_name("SwipeRightIntent")(handler_input)
-
-    def handle(self, handler_input):
-        """Handler for Hello World Intent."""
-        session_attributes = handler_input.attributes_manager.session_attributes
-        
-        response = swipe_right(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
-        print('right', response)
-
-        return GetRecommendationsIntentHandler.handle(self, handler_input)
-
-class SuperLikeIntentHandler(AbstractRequestHandler):
-    """Handler for Super Like Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return is_intent_name("SuperLikeIntent")(handler_input)
-
-    def handle(self, handler_input):
-        """Handler for Super Like Intent."""
-        session_attributes = handler_input.attributes_manager.session_attributes
-        
-        response = super_like(session_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
-        print('super like', response)
-        
-        speech_text = "You super liked {}".format(session_attributes['CURRENT_MATCH']['name'])
-        
-        if 'limit_exceeded' in response.keys():
-            speech_text = 'You do not have any super likes. Your super like resets at {}'.format(response['super_likes']['resets_at'])
-
-        handler_input.response_builder.speak(speech_text).ask(
-            speech_text).set_card(SimpleCard(
-                "Super Like", speech_text)).set_should_end_session(False)
-        return handler_input.response_builder.response
-    
-
 class SetLocationIntentHandler(AbstractRequestHandler):
-    """Handler for Hello World Intent."""
+    """Handler for Set Location Intent."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         return is_intent_name("SetLocationIntent")(handler_input)
 
     def handle(self, handler_input):
-        """Handler for Hello World Intent."""
+        """Handler for Set Location Intent."""
         # type: (HandlerInput) -> Response
         slots = handler_input.request_envelope.request.intent.slots
         session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
 
         city = slots['City'].value
         country = slots['Country'].value
@@ -369,12 +415,12 @@ class SetLocationIntentHandler(AbstractRequestHandler):
 
         if city is not None:
             session_attributes['CITY'] = city
-            response = set_location(session_attributes['AUTH_TOKEN'], city)
-            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key=API_KEY&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'])
+            response = set_location(persistence_attributes['AUTH_TOKEN'], city)
+            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key=AIzaSyDXW4Vxk7lo8QazzA4lT4knJXVGIUVzEfM&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'])
         elif country is not None:
             session_attributes['COUNTRY'] = country
-            response = set_location(session_attributes['AUTH_TOKEN'], country)
-            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key=API_KEY&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'])
+            response = set_location(persistence_attributes['AUTH_TOKEN'], country)
+            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key=AIzaSyDXW4Vxk7lo8QazzA4lT4knJXVGIUVzEfM&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'])
         else:
             speech = "I'm not sure what city you asked for, please try again"
             reprompt = ("I'm not sure what city you set your location to. "
@@ -394,6 +440,21 @@ class SetLocationIntentHandler(AbstractRequestHandler):
                 )
             )
         )
+        
+        if supports_display(handler_input):
+            print('set location support display')
+            img = Image(
+                sources=[ImageInstance(url=map_location)], content_description=speech_text)
+            title = "Set Location"
+            primary_text = speech_text
+            text_content = get_plain_text_content(
+                primary_text=primary_text)
+            
+            handler_input.response_builder.add_directive(
+                RenderTemplateDirective(
+                    BodyTemplate7(
+                        back_button=BackButtonBehavior.VISIBLE,
+                        image=img, title=title)))
 
         return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
 
@@ -439,9 +500,9 @@ class FallbackIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
         speech_text = (
-            "The Hello World skill can't help you with that.  "
-            "You can say hello!!")
-        reprompt = "You can say hello!!"
+            "The Tinder Voice skill can't help you with that.  "
+            "You can say get profiles")
+        reprompt = "You can say get profiles!!"
         handler_input.response_builder.speak(speech_text).ask(reprompt)
         return handler_input.response_builder.response
 
@@ -486,6 +547,7 @@ sb.add_request_handler(GetRecommendationsIntentHandler())
 sb.add_request_handler(SwipeLeftIntentHandler())
 sb.add_request_handler(SwipeRightIntentHandler())
 sb.add_request_handler(SuperLikeIntentHandler())
+sb.add_request_handler(RewindIntentHandler())
 sb.add_request_handler(SetLocationIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
