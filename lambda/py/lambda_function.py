@@ -17,7 +17,7 @@ from ask_sdk_dynamodb.adapter import DynamoDbAdapter
 from ask_sdk_model.ui import SimpleCard, StandardCard
 from ask_sdk_model.interfaces.display import (
     ImageInstance, Image, RenderTemplateDirective,
-    BackButtonBehavior, BodyTemplate3)
+    BackButtonBehavior, BodyTemplate3, BodyTemplate7)
 from ask_sdk_model.interfaces.audioplayer import (
     PlayDirective, PlayBehavior, AudioItem, Stream, AudioItemMetadata,
     StopDirective)
@@ -259,23 +259,23 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
         
         if supports_display(handler_input):
             print('supports display on match intent')
-            # img = Image(
-            #     sources=[ImageInstance(url=user['photo'])])
-            # title = user['name'] + ' ' + user['age']
-            # primary_text = user['job'] + ' ' + user['company']
-            # secondary_text = user['school']
-            # tertiary_text = user['bio']
-            # text_content = get_plain_text_content(
-            #     primary_text=primary_text, secondary_text=secondary_text, tertiary_text=tertiary_text)
+            img = Image(
+                sources=[ImageInstance(url=user['photo'])])
+            title = user['name'] + ' ' + user['age']
+            primary_text = user['job'] + ' ' + user['company']
+            secondary_text = user['school']
+            tertiary_text = user['bio']
+            text_content = get_plain_text_content(
+                primary_text=primary_text, secondary_text=secondary_text, tertiary_text=tertiary_text)
                 
-            # print(img, title, primary_text, secondary_text, tertiary_text)
+            print(img, title, primary_text, secondary_text, tertiary_text)
             
-            # handler_input.response_builder.add_directive(
-            #     RenderTemplateDirective(
-            #         BodyTemplate3(
-            #             back_button=BackButtonBehavior.VISIBLE,
-            #             image=img, title=title,
-            #             text_content=text_content)))
+            handler_input.response_builder.add_directive(
+                RenderTemplateDirective(
+                    BodyTemplate3(
+                        back_button=BackButtonBehavior.VISIBLE,
+                        image=img, title=title,
+                        text_content=text_content)))
                         
         reprompt = ('What did you want to do? You can tell me swipe left, swipe right, super like, or see profile')
 
@@ -440,6 +440,21 @@ class SetLocationIntentHandler(AbstractRequestHandler):
                 )
             )
         )
+        
+        if supports_display(handler_input):
+            print('set location support display')
+            img = Image(
+                sources=[ImageInstance(url=map_location)], content_description=speech_text)
+            title = "Set Location"
+            primary_text = speech_text
+            text_content = get_plain_text_content(
+                primary_text=primary_text)
+            
+            handler_input.response_builder.add_directive(
+                RenderTemplateDirective(
+                    BodyTemplate7(
+                        back_button=BackButtonBehavior.VISIBLE,
+                        image=img, title=title)))
 
         return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
 
