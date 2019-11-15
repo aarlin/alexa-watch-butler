@@ -5,8 +5,11 @@ Tinder Voice
 
 Setup
 -----
-[![iOS](./images/apple_store.jpg)](https://apps.apple.com/us/app/amazon-alexa/id944011620)
-[![Android](./images/google_play.png)](https://play.google.com/store/apps/details?id=com.amazon.dee.app&hl=en_US)
+
+Download Amazon Alexa from Apple Store or Google Play.
+
+[![iOS](./images/appstore.png)](https://apps.apple.com/us/app/amazon-alexa/id944011620)
+[![Android](./images/playstore.png)](https://play.google.com/store/apps/details?id=com.amazon.dee.app&hl=en_US)
 
 To run this example skill you need to do two things. The first is to
 deploy the example code in lambda, and the second is to configure the
@@ -26,16 +29,6 @@ For the sample skill using the ``AbstractRequestHandler`` classes approach, chec
 
 Additional Resources
 --------------------
-
-### Community
-
--  [Amazon Developer Forums](https://forums.developer.amazon.com/spaces/165/index.html) : Join the conversation!
--  [Hackster.io](https://www.hackster.io/amazon-alexa) - See what others are building with Alexa.
-
-### Tutorials & Guides
-
--  [Voice Design Guide](https://developer.amazon.com/designing-for-voice/) -
-   A great resource for learning conversational and voice user interface design.
 
 ### Documentation
 
