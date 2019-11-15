@@ -28,7 +28,7 @@ from ask_sdk_s3.adapter import S3Adapter
 
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
-from tinder_api import set_location, get_recommendations, swipe_left, swipe_right, get_profile, super_like
+from tinder_api import set_location, get_recommendations, swipe_left, swipe_right, get_profile, super_like, get_updates
 from alexa_api import get_permissions
 from utils import EmptyNoneFormatter, supports_display, get_age
 
@@ -63,7 +63,30 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
             session_attributes['PHONE_NUMBER'] = profile_mobile_number.country_code + profile_mobile_number.phone_number.replace(" ", "")
             
-            if 'AUTH_TOKEN' not in persistence_attributes:
+            if session_attributes['PHONE_NUMBER'] and persistence_attributes['AUTH_TOKEN']:
+                response = get_updates(persistence_attributes['AUTH_TOKEN'])
+                
+                if response['status'] == 401:
+                    print('401')
+                    handler_input.attributes_manager.delete_persistent_attributes()
+                    
+                    request_code = send_phone_code(session_attributes['PHONE_NUMBER'])
+                    session_attributes['REQUEST_CODE'] = request_code
+
+                    authorized_speech_text = (
+                        "Welcome to Tinder Voice! "
+                        "What is the request code we sent your phone number?")
+                    return handler_input.response_builder.speak(authorized_speech_text).set_card(
+                    SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
+                    False).response
+                else: 
+                    authorized_speech_text = (
+                        "Welcome to Tinder Voice! "
+                        "Would you like to get profiles or set your location?")
+                    return handler_input.response_builder.speak(authorized_speech_text).set_card(
+                    SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
+                    False).response
+            else:
                 request_code = send_phone_code(session_attributes['PHONE_NUMBER'])
                 session_attributes['REQUEST_CODE'] = request_code
 
@@ -73,23 +96,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
                 return handler_input.response_builder.speak(authorized_speech_text).set_card(
                 SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
                 False).response
-            elif session_attributes['PHONE_NUMBER'] and persistence_attributes['AUTH_TOKEN']:
-                authorized_speech_text = (
-                    "Welcome to Tinder Voice! "
-                    "Would you like to get profiles or set your location?")
-                return handler_input.response_builder.speak(authorized_speech_text).set_card(
-                SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
-                False).response
-
         else:
-            # speech_text = (
-            #     "Welcome to Tinder Lite! "
-            #     "Would you like to authenicate with phone or authenticate through facebook?")
-                
-
-            # return handler_input.response_builder.speak(speech_text).set_card(
-            #     SimpleCard("Hello World", speech_text)).set_should_end_session(
-            #     False).response
             NOTIFY_MISSING_PERMISSIONS = ("Please enable Location permissions in "
                 "the Amazon Alexa app.")
             permissions = ["alexa::profile:mobile_number:read"]
