@@ -82,23 +82,23 @@
                     "samples": [
                         "Set my location to {City}",
                         "Set my country to {Country}",
-                        "Set my location to {Country}"
+                        "Set my location to {Country}",
+                        "Set my city to {City}"
                     ]
                 },
                 {
-                    "name": "GetMatchesIntent",
+                    "name": "GetRecommendationsIntent",
                     "slots": [],
                     "samples": [
-                        "Get matches",
-                        "Get my matches"
+                        "Get nearby users",
+                        "Get recommendations",
+                        "Get profiles"
                     ]
                 },
                 {
                     "name": "SwipeLeftIntent",
                     "slots": [],
                     "samples": [
-                        "Pass",
-                        "Skip",
                         "Swipe left",
                         "Left",
                         "No",
@@ -113,6 +113,36 @@
                         "Right",
                         "Like",
                         "Yes"
+                    ]
+                },
+                {
+                    "name": "SuperLikeIntent",
+                    "slots": [],
+                    "samples": [
+                        "Swipe up",
+                        "Up",
+                        "Super like"
+                    ]
+                },
+                {
+                    "name": "RewindIntent",
+                    "slots": [],
+                    "samples": [
+                        "go back",
+                        "previous",
+                        "rewind"
+                    ]
+                },
+                {
+                    "name": "FastMatchIntent",
+                    "slots": [],
+                    "samples": [
+                        "get fast matches",
+                        "get fast match",
+                        "get match previews",
+                        "who liked me",
+                        "who likes me",
+                        "see who liked me"
                     ]
                 },
                 {
@@ -157,6 +187,14 @@
                 },
                 {
                     "name": "AMAZON.ScrollUpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PauseIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ResumeIntent",
                     "samples": []
                 }
             ],

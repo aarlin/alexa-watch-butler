@@ -114,3 +114,20 @@ def get_updates(auth_token):
     
     response = r.json()
     return response
+
+def get_fast_match_teasers(auth_token):
+    headers = {
+      'X-Auth-Token' : auth_token,
+      'Content-Type': 'application/json',
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
+    }
+    
+    URL = 'https://api.gotinder.com/v2/fast-match/teasers'
+    
+    r = requests.get(URL, headers=headers, verify=True)
+    response = r.json()
+    
+    users = [user for user in response['data']['results']]
+    user_photos = [user['user']['photos'][0]['url'] for user in users]
+    
+    return user_photos

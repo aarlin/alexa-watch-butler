@@ -28,7 +28,7 @@ from ask_sdk_s3.adapter import S3Adapter
 
 from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
-from tinder_api import set_location, get_recommendations, swipe_left, swipe_right, get_profile, super_like, get_updates
+from tinder_api import set_location, get_recommendations, swipe_left, swipe_right, get_profile, super_like, get_updates, get_fast_match_teasers
 from alexa_api import get_permissions
 from utils import EmptyNoneFormatter, supports_display, get_age
 
@@ -465,6 +465,36 @@ class SetLocationIntentHandler(AbstractRequestHandler):
 
         return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
 
+class FastMatchIntentHandler(AbstractRequestHandler):
+    """Handler for Fast Match Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("FastMatchIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Fast Match Intent."""
+        # type: (HandlerInput) -> Response
+        slots = handler_input.request_envelope.request.intent.slots
+        session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
+        
+        fast_matches_photos = get_fast_match_teasers(persistence_attributes['AUTH_TOKEN'])
+        
+        speech_text = "We have {} people who liked you".format(len(fast_matches_photos))
+        
+        handler_input.response_builder.set_card(
+            ui.StandardCard(
+                title="Who Liked You",
+                text= speech_text,
+                image=ui.Image(
+                    small_image_url=fast_matches_photos[0],
+                    large_image_url=fast_matches_photos[0]
+                )
+            )
+        )
+        
+        return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
+
 class HelpIntentHandler(AbstractRequestHandler):
     """Handler for Help Intent."""
     def can_handle(self, handler_input):
@@ -556,6 +586,7 @@ sb.add_request_handler(SwipeRightIntentHandler())
 sb.add_request_handler(SuperLikeIntentHandler())
 sb.add_request_handler(RewindIntentHandler())
 sb.add_request_handler(SetLocationIntentHandler())
+sb.add_request_handler(FastMatchIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
