@@ -1,6 +1,8 @@
 Tinder Voice
 =========================================
 
+Tinder with Voice Commands
+
 ![](./images/108.png) ![](./images/plus-108.png) ![](./images/108-alexa.png)
 
 Setup
@@ -20,7 +22,7 @@ Alexa skill to use Lambda.
 Commands
 --------------------
 
-You can take a look at the ``models/en-US.json`` file for the intents.  
+You can take a look at the [models/en-US.json](https://github.com/aarlin/tinder-voice/blob/master/models/en-US.json) for the full list of intents.  
 Here is a concise table of all the commands.  
 
 | Command                                                | Description                                                  |
@@ -41,4 +43,3 @@ Additional Resources
 -  [Official Alexa Skills Kit Python SDK](https://pypi.org/project/ask-sdk/)
 -  [Official Alexa Skills Kit Python SDK Docs](https://alexa-skills-kit-python-sdk.readthedocs.io/en/latest/)
 -  [Official Alexa Skills Kit Docs](https://developer.amazon.com/docs/ask-overviews/build-skills-with-the-alexa-skills-kit.html)
-
