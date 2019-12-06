@@ -20,26 +20,6 @@
                     "samples": []
                 },
                 {
-                    "name": "PhoneAuthIntent",
-                    "slots": [],
-                    "samples": [
-                        "authenticate with phone",
-                        "authenticate through phone",
-                        "phone authentication",
-                        "phone"
-                    ]
-                },
-                {
-                    "name": "FacebookAuthIntent",
-                    "slots": [],
-                    "samples": [
-                        "authenticate with facebook",
-                        "authenticate through facebook",
-                        "facebook authentication",
-                        "facebook"
-                    ]
-                },
-                {
                     "name": "PhoneRequestCodeIntent",
                     "slots": [
                         {
@@ -102,7 +82,8 @@
                         "Swipe left",
                         "Left",
                         "No",
-                        "Nope"
+                        "Nope",
+                        "Pass"
                     ]
                 },
                 {
@@ -142,7 +123,15 @@
                         "get match previews",
                         "who liked me",
                         "who likes me",
-                        "see who liked me"
+                        "see who liked me",
+                        "see who likes me"
+                    ]
+                },
+                {
+                    "name": "FastMatchPreviewerIntent",
+                    "slots": [],
+                    "samples": [
+                        "get next match preview"
                     ]
                 },
                 {
@@ -187,14 +176,6 @@
                 },
                 {
                     "name": "AMAZON.ScrollUpIntent",
-                    "samples": []
-                },
-                {
-                    "name": "AMAZON.PauseIntent",
-                    "samples": []
-                },
-                {
-                    "name": "AMAZON.ResumeIntent",
                     "samples": []
                 }
             ],

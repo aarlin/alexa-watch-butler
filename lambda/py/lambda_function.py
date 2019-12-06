@@ -63,7 +63,8 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
             session_attributes['PHONE_NUMBER'] = profile_mobile_number.country_code + profile_mobile_number.phone_number.replace(" ", "")
             
-            if session_attributes['PHONE_NUMBER'] and persistence_attributes['AUTH_TOKEN']:
+            if session_attributes['PHONE_NUMBER'] and 'AUTH_TOKEN' in persistence_attributes:
+                print(persistence_attributes['AUTH_TOKEN'])
                 response = get_updates(persistence_attributes['AUTH_TOKEN'])
                 
                 if response['status'] == 401:
@@ -102,48 +103,6 @@ class LaunchRequestHandler(AbstractRequestHandler):
             permissions = ["alexa::profile:mobile_number:read"]
             return handler_input.response_builder.speak(NOTIFY_MISSING_PERMISSIONS).set_card(
             AskForPermissionsConsentCard(permissions=permissions)).response
-
-class PhoneAuthIntentHandler(AbstractRequestHandler):
-    """Handler for Phone Auth Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return is_intent_name("PhoneAuthIntent")(handler_input)
-        
-    def handle(self, handler_input):
-        """Handler for Skill Launch."""
-        # type: (HandlerInput) -> Response
-        speech_text = "To access Tinder, we will send a request code to you. What is your phone number?"
-
-        return handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Phone Authentication", speech_text)).set_should_end_session(
-            False).response
-
-class FacebookAuthIntentHandler(AbstractRequestHandler):
-    """Handler for Facebook Auth Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return is_intent_name("FacebookAuthIntent")(handler_input)
-
-    def handle(self, handler_input):
-        """Handler for Facebook Auth Intent."""
-        # type: (HandlerInput) -> Response
-        speech_text_invalid_acc_link = "To access Tinder, please setup account linking."
-        speech_text_valid_acc_link = "We have you authenticated. Where do you want to set your location to?"
-        
-        access_token = handler_input.request_envelope.context.system.user.access_token
-        session_attributes = handler_input.attributes_manager.session_attributes
-        persistence_attributes = handler_input.attributes_manager.persistent_attributes
-
-        if access_token:
-            auth_token = get_auth_token(access_token)
-            persistence_attributes['AUTH_TOKEN'] = auth_token
-            return handler_input.response_builder.speak(speech_text_valid_acc_link).set_card(
-                SimpleCard("Facebook Authentication", speech_text_valid_acc_link)).set_should_end_session(
-                False).response
-        else:
-            return handler_input.response_builder.speak(speech_text_invalid_acc_link).set_card(
-                SimpleCard("Facebook Authentication", speech_text_invalid_acc_link)).set_should_end_session(
-                False).response
 
 class PhoneRequestCodeIntentHandler(AbstractRequestHandler):
     """Handler for Phone Request Intent."""
@@ -206,7 +165,7 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
                         "You can tell me your confirmation code by saying, "
                         "my confirmation code is ")
 
-        speech_text = "Okay, we have you authenticated. Do you want matches or set your location?"
+        speech_text = "Okay, we have you authenticated. Do you want to get profiles or set your location?"
 
         return handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Phone Authentication", speech_text)).set_should_end_session(
@@ -478,22 +437,63 @@ class FastMatchIntentHandler(AbstractRequestHandler):
         session_attributes = handler_input.attributes_manager.session_attributes
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
-        fast_matches_photos = get_fast_match_teasers(persistence_attributes['AUTH_TOKEN'])
+        session_attributes['FAST_MATCH'] = get_fast_match_teasers(persistence_attributes['AUTH_TOKEN'])
+        print(session_attributes['FAST_MATCH'])
         
-        speech_text = "We have {} people who liked you".format(len(fast_matches_photos))
+        speech_text = "You have {} people who liked you. Say get next match preview for the next person who liked you".format(len(session_attributes['FAST_MATCH']))
+        reprompt = "Say get next match preview for the next person who liked you"
         
-        handler_input.response_builder.set_card(
-            ui.StandardCard(
-                title="Who Liked You",
-                text= speech_text,
-                image=ui.Image(
-                    small_image_url=fast_matches_photos[0],
-                    large_image_url=fast_matches_photos[0]
+        if len(session_attributes['FAST_MATCH']) > 0:
+            individual_fast_match = session_attributes['FAST_MATCH'].pop()
+            handler_input.response_builder.set_card(
+                ui.StandardCard(
+                    title="Who Liked You",
+                    text= speech_text,
+                    image=ui.Image(
+                        small_image_url=individual_fast_match,
+                        large_image_url=individual_fast_match
+                    )
                 )
             )
-        )
         
-        return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
+        return handler_input.response_builder.speak(speech_text).ask(reprompt).set_should_end_session(False).response
+
+class FastMatchPreviewerIntentHandler(AbstractRequestHandler):
+    """Handler for Fast Match Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("FastMatchPreviewerIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Fast Match Intent."""
+        # type: (HandlerInput) -> Response
+        slots = handler_input.request_envelope.request.intent.slots
+        session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
+        
+        
+        if len(session_attributes['FAST_MATCH']) > 0:
+            speech_text = "Here is the photo of the next person who liked you"
+            reprompt = "Say get next match preview for the next person who liked you"
+            
+            individual_fast_match = session_attributes['FAST_MATCH'].pop()
+            handler_input.response_builder.set_card(
+                ui.StandardCard(
+                    title="Who Liked You",
+                    text= speech_text,
+                    image=ui.Image(
+                        small_image_url=individual_fast_match,
+                        large_image_url=individual_fast_match
+                    )
+                )
+            )
+            return handler_input.response_builder.speak(speech_text).ask(reprompt).set_should_end_session(False).response
+        else:
+            speech_text = "You don't have anymore people who liked you"
+            reprompt = "Would you like to get profiles?"
+            
+            return handler_input.response_builder.speak(speech_text).ask(reprompt).set_should_end_session(False).response
+
 
 class HelpIntentHandler(AbstractRequestHandler):
     """Handler for Help Intent."""
@@ -507,7 +507,7 @@ class HelpIntentHandler(AbstractRequestHandler):
 
         handler_input.response_builder.speak(speech_text).ask(
             speech_text).set_card(SimpleCard(
-                "Hello World", speech_text))
+                "Tinder Voice", speech_text))
         return handler_input.response_builder.response
 
 class CancelOrStopIntentHandler(AbstractRequestHandler):
@@ -576,8 +576,6 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
 
 
 sb.add_request_handler(LaunchRequestHandler())
-sb.add_request_handler(PhoneAuthIntentHandler())
-sb.add_request_handler(FacebookAuthIntentHandler())
 sb.add_request_handler(PhoneRequestCodeIntentHandler())
 sb.add_request_handler(PhoneAuthenticationIntentHandler())
 sb.add_request_handler(GetRecommendationsIntentHandler())
@@ -587,6 +585,7 @@ sb.add_request_handler(SuperLikeIntentHandler())
 sb.add_request_handler(RewindIntentHandler())
 sb.add_request_handler(SetLocationIntentHandler())
 sb.add_request_handler(FastMatchIntentHandler())
+sb.add_request_handler(FastMatchPreviewerIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
