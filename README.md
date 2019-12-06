@@ -10,8 +10,8 @@ Setup
 
 Download Amazon Alexa from Apple Store or Google Play.
 
-[![iOS](./images/appstore.png)](https://apps.apple.com/us/app/amazon-alexa/id944011620)
-[![Android](./images/playstore.png)](https://play.google.com/store/apps/details?id=com.amazon.dee.app&hl=en_US)
+[![iOS](./images/btn--appstore.png)](https://apps.apple.com/us/app/amazon-alexa/id944011620)
+[![Android](./images/btn--googleplay.png)](https://play.google.com/store/apps/details?id=com.amazon.dee.app&hl=en_US)
 
 To run this example skill you need to do two things. The first is to
 deploy the example code in lambda, and the second is to configure the
