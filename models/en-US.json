@@ -20,31 +20,19 @@
                     "samples": []
                 },
                 {
-                    "name": "PhoneRequestCodeIntent",
-                    "slots": [
-                        {
-                            "name": "PhoneNumber",
-                            "type": "AMAZON.PhoneNumber"
-                        }
-                    ],
-                    "samples": [
-                        "My phone number is {PhoneNumber}",
-                        "{PhoneNumber}"
-                    ]
-                },
-                {
                     "name": "PhoneAuthenticationIntent",
                     "slots": [
                         {
-                            "name": "SMSCode",
+                            "name": "OTPCode",
                             "type": "AMAZON.NUMBER"
                         }
                     ],
                     "samples": [
-                        "My code is {SMSCode}",
-                        "My request code is {SMSCode}",
-                        "Request code is {SMSCode}",
-                        "{SMSCode}"
+                        "My code is {OTPCode}",
+                        "My request code is {OTPCode}",
+                        "Request code is {OTPCode}",
+                        "{OTPCode}",
+                        "My tinder code is {OTPCode}"
                     ]
                 },
                 {

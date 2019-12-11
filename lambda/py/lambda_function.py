@@ -71,8 +71,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
                     print('401')
                     handler_input.attributes_manager.delete_persistent_attributes()
                     
-                    request_code = send_phone_code(session_attributes['PHONE_NUMBER'])
-                    session_attributes['REQUEST_CODE'] = request_code
+                    send_phone_code(session_attributes['PHONE_NUMBER'])
 
                     authorized_speech_text = (
                         "Welcome to Tinder Voice! "
@@ -88,8 +87,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
                     SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
                     False).response
             else:
-                request_code = send_phone_code(session_attributes['PHONE_NUMBER'])
-                session_attributes['REQUEST_CODE'] = request_code
+                send_phone_code(session_attributes['PHONE_NUMBER'])
 
                 authorized_speech_text = (
                     "Welcome to Tinder Voice! "
@@ -104,38 +102,6 @@ class LaunchRequestHandler(AbstractRequestHandler):
             return handler_input.response_builder.speak(NOTIFY_MISSING_PERMISSIONS).set_card(
             AskForPermissionsConsentCard(permissions=permissions)).response
 
-class PhoneRequestCodeIntentHandler(AbstractRequestHandler):
-    """Handler for Phone Request Intent."""
-    def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
-        return is_intent_name("PhoneRequestCodeIntent")(handler_input)
-
-    def handle(self, handler_input):
-        """Handler for Phone Request Intent."""
-        # type: (HandlerInput) -> Response
-
-        slots = handler_input.request_envelope.request.intent.slots
-        session_attributes = handler_input.attributes_manager.session_attributes
-
-        if 'PhoneNumber' in slots:
-            phone_number = slots['PhoneNumber'].value
-            session_attributes['PHONE_NUMBER'] = phone_number
-            request_code = send_phone_code(phone_number)
-            session_attributes['REQUEST_CODE'] = request_code
-        elif session_attributes['REQUEST_CODE'] == False:
-            print('here')
-        else:
-            speech = "I'm not sure what your phone number is, please try again"
-            reprompt = ("I'm not sure what your phone number is. "
-                        "You can tell me your phone number by saying, "
-                        "my phone number is ")
-
-        speech_text = "What is the request code that was sent to your phone?"
-
-        return handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Phone Authentication", speech_text)).set_should_end_session(
-            False).response
-
 class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
     """Handler for Phone Authentication Intent."""
     def can_handle(self, handler_input):
@@ -149,10 +115,10 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
         session_attributes = handler_input.attributes_manager.session_attributes
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
 
-        if 'SMSCode' in slots:
-            sms_code = slots['SMSCode'].value
-            session_attributes['SMS_CODE'] = sms_code
-            auth_token = get_token_through_phone(sms_code, session_attributes['PHONE_NUMBER'], session_attributes['REQUEST_CODE'])
+        if 'OTPCode' in slots:
+            session_attributes['OTP_CODE'] = slots['OTPCode'].value
+            auth_token = get_token_through_phone(session_attributes['OTP_CODE'], session_attributes['PHONE_NUMBER'])
+            print(auth_token)
             
             persistence_attributes['AUTH_TOKEN'] = auth_token
             handler_input.attributes_manager.save_persistent_attributes()
@@ -576,7 +542,6 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
 
 
 sb.add_request_handler(LaunchRequestHandler())
-sb.add_request_handler(PhoneRequestCodeIntentHandler())
 sb.add_request_handler(PhoneAuthenticationIntentHandler())
 sb.add_request_handler(GetRecommendationsIntentHandler())
 sb.add_request_handler(SwipeLeftIntentHandler())
