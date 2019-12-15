@@ -485,10 +485,10 @@ class CancelOrStopIntentHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
-        speech_text = "Goodbye!"
+        speech_text = "Exiting Tinder Voice!"
 
         handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Hello World", speech_text))
+            SimpleCard("Tinder Voice", speech_text))
         return handler_input.response_builder.response
 
 class FallbackIntentHandler(AbstractRequestHandler):
