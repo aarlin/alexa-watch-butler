@@ -26,7 +26,6 @@ from ask_sdk_model import ui
 from ask_sdk_model import Response
 from ask_sdk_s3.adapter import S3Adapter
 
-from fb_auth import get_auth_token
 from phone_auth import send_phone_code, get_token_through_phone
 from tinder_api import set_location, get_recommendations, swipe_left, swipe_right, get_profile, super_like, get_updates, get_fast_match_teasers
 from alexa_api import get_permissions
@@ -164,13 +163,13 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
 
         if isinstance(self, SwipeLeftIntentHandler):
             print('swipe left here')
-            speech_text = 'Swiped left. Your next match is {}. {} years old. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
+            speech_text = 'Swiped left. Your next match is {}. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
         elif isinstance(self, SwipeRightIntentHandler):
-            speech_text = 'Swiped right. Your next match is {}. {} years old. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
+            speech_text = 'Swiped right. Your next match is {}. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
         elif isinstance(self, SuperLikeIntentHandler):
-            speech_text = 'Super liked. Your next match is {}. {} years old. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
+            speech_text = 'Super liked. Your next match is {}. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
         else:
-            speech_text = "{}. {} years old. Bio reads: {}".format(user['name'], user['age'], user['bio']) 
+            speech_text = "{}. Bio reads: {}".format(user['name'], user['age'], user['bio']) 
         
         
         image = {
@@ -285,7 +284,7 @@ class RewindIntentHandler(AbstractRequestHandler):
         session_attributes['NEXT_MATCH'] = session_attributes['CURRENT_MATCH']
         session_attributes['CURRENT_MATCH'] = user
         
-        speech_text = "{}. {} years old. Bio reads: {}".format(user['name'], user['age'], user['bio']) 
+        speech_text = "{}. Bio reads: {}".format(user['name'], user['age'], user['bio']) 
         
         image = {
             "smallImageUrl": user['photo'],

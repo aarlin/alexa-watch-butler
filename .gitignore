@@ -6,3 +6,5 @@ notes.txt
 sample.json
 Untitled*.json
 matches.json
+
+__pycache__
