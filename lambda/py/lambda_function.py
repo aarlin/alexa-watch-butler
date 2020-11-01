@@ -4,6 +4,7 @@
 # the decorators approach in skill builder.
 import logging
 import os
+from dotenv import load_dotenv
 
 from ask_sdk_core.skill_builder import CustomSkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler
@@ -34,6 +35,8 @@ from utils import EmptyNoneFormatter, supports_display, get_age
 s3_adapter = S3Adapter(bucket_name=os.environ.get('S3_PERSISTENCE_BUCKET'))
 
 sb = CustomSkillBuilder(api_client=DefaultApiClient(), persistence_adapter=s3_adapter)
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -341,17 +344,15 @@ class SetLocationIntentHandler(AbstractRequestHandler):
 
         city = slots['City'].value
         country = slots['Country'].value
-        
-        print(city, country)
 
         if city is not None:
             session_attributes['CITY'] = city
             response = set_location(persistence_attributes['AUTH_TOKEN'], city)
-            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key=AIzaSyDXW4Vxk7lo8QazzA4lT4knJXVGIUVzEfM&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'])
+            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key={key}&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'], key=os.getenv('GOOGLE_MAPS_API_KEY'))
         elif country is not None:
             session_attributes['COUNTRY'] = country
             response = set_location(persistence_attributes['AUTH_TOKEN'], country)
-            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key=AIzaSyDXW4Vxk7lo8QazzA4lT4knJXVGIUVzEfM&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'])
+            map_location = "https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=12&size=600x400&key={key}&markers=size:mid%7Ccolor:0xff0000%7Clabel:%7C{lat},{lon}".format(lat=response['lat'], lon=response['lon'], key=os.getenv('GOOGLE_MAPS_API_KEY'))
         else:
             speech = "I'm not sure what city you asked for, please try again"
             reprompt = ("I'm not sure what city you set your location to. "
