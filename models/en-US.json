@@ -49,8 +49,9 @@
                     ],
                     "samples": [
                         "Set my location to {City}",
-                        "Set my country to {Country}",
                         "Set my location to {Country}",
+                        "Set my location to {City} {Country}",
+                        "Set my country to {Country}",
                         "Set my city to {City}"
                     ]
                 },
