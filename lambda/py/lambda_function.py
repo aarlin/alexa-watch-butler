@@ -79,14 +79,14 @@ class LaunchRequestHandler(AbstractRequestHandler):
                         "Welcome to Tinder Voice! "
                         "What is the request code we sent your phone number?")
                     return handler_input.response_builder.speak(authorized_speech_text).set_card(
-                    SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
+                    SimpleCard("Login Request Code", authorized_speech_text)).set_should_end_session(
                     False).response
                 else: 
                     authorized_speech_text = (
                         "Welcome to Tinder Voice! "
                         "Would you like to get profiles, set your location, or see who liked you?")
                     return handler_input.response_builder.speak(authorized_speech_text).set_card(
-                    SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
+                    SimpleCard("Success!", authorized_speech_text)).set_should_end_session(
                     False).response
             else:
                 send_phone_code(session_attributes['PHONE_NUMBER'])
@@ -95,7 +95,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
                     "Welcome to Tinder Voice! "
                     "What is the request code we sent your phone number?")
                 return handler_input.response_builder.speak(authorized_speech_text).set_card(
-                SimpleCard("Request Code", authorized_speech_text)).set_should_end_session(
+                SimpleCard("Login Request Code", authorized_speech_text)).set_should_end_session(
                 False).response
         else:
             NOTIFY_MISSING_PERMISSIONS = ("Please enable Location permissions in "
