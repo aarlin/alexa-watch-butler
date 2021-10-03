@@ -73,7 +73,10 @@ So far, we have [created a Voice User Interface](./1-voice-user-interface.md) an
 
 ## Customization / Next Steps
 
-At this point, you should have a working copy of our Hello World skill. 
+Download Amazon Alexa from Apple Store or Google Play.
+
+[![iOS](../images/btn--appstore.png)](https://apps.apple.com/us/app/amazon-alexa/id944011620)
+[![Android](../images/btn--googleplay.png)](https://play.google.com/store/apps/details?id=com.amazon.dee.app&hl=en_US)
 
 Normally, if you were building a skill from one of our templates, you would customize it and make it your own (as opposed to a clone of our template).  After that, you would certify and publish the skill.  Given that this is the Hello World skill, you won't be doing that.  Instead, check out some of these other templates which will start to show you more of the features of the Alexa Skills Kit.
 
