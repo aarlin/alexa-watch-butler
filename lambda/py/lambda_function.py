@@ -29,7 +29,6 @@ from phone_auth import send_phone_code, get_token_through_phone
 from tinder_api import set_location, get_recommendations, swipe_left, swipe_right, get_profile, super_like, get_updates, get_fast_match_teasers
 from alexa_api import get_permissions
 from utils import EmptyNoneFormatter, supports_display, get_age
-from sms_auth_v3 import TinderSMSAuth
 
 s3_adapter = S3Adapter(bucket_name=os.environ.get('S3_PERSISTENCE_BUCKET'))
 
@@ -38,7 +37,7 @@ sb = CustomSkillBuilder(api_client=DefaultApiClient(), persistence_adapter=s3_ad
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
 
 class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Launch Request."""
