@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# This is a simple Hello World Alexa Skill, built using
-# the decorators approach in skill builder.
 import logging
 import os
 from dotenv import load_dotenv
@@ -31,6 +29,7 @@ from phone_auth import send_phone_code, get_token_through_phone
 from tinder_api import set_location, get_recommendations, swipe_left, swipe_right, get_profile, super_like, get_updates, get_fast_match_teasers
 from alexa_api import get_permissions
 from utils import EmptyNoneFormatter, supports_display, get_age
+from sms_auth_v3 import TinderSMSAuth
 
 s3_adapter = S3Adapter(bucket_name=os.environ.get('S3_PERSISTENCE_BUCKET'))
 
@@ -39,7 +38,7 @@ sb = CustomSkillBuilder(api_client=DefaultApiClient(), persistence_adapter=s3_ad
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 
 class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Launch Request."""
@@ -133,7 +132,7 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
                         "You can tell me your confirmation code by saying, "
                         "my confirmation code is ")
 
-        speech_text = "Okay, we have you authenticated. Do you want to get profiles or set your location?"
+        speech_text = "Okay, we have you authenticated. Do you want to get profiles, set your location or say see who liked me?"
 
         return handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Phone Authentication", speech_text)).set_should_end_session(
@@ -559,4 +558,3 @@ sb.add_request_handler(SessionEndedRequestHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())
 
 lambda_handler = sb.lambda_handler()
-
