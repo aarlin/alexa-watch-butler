@@ -129,7 +129,8 @@ def get_fast_match_teasers(auth_token):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)',
+      'platform': 'android'
     }
     
     URL = 'https://api.gotinder.com/v2/fast-match/teasers'
