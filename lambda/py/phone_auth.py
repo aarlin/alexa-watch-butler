@@ -30,7 +30,7 @@ def send_phone_code(phone_number):
     }
     session.post(url + "/v2/buckets", json=payload)
     if refreshtoken is not None:
-        print("Attempting to refresh auth token with saved refresh token")
+        print('[send_phone_code]: ', "Attempting to refresh auth token with saved refresh token")
         messageout = AuthGatewayRequest(
             refresh_auth=RefreshAuth(refresh_token=refreshtoken))
     else:

@@ -64,11 +64,11 @@ class LaunchRequestHandler(AbstractRequestHandler):
             session_attributes['PHONE_NUMBER'] = profile_mobile_number.country_code + profile_mobile_number.phone_number.replace(" ", "")
             
             if session_attributes['PHONE_NUMBER'] and 'AUTH_TOKEN' in persistence_attributes:
-                print(persistence_attributes['AUTH_TOKEN'])
+                print('[LaunchRequestHandler.handle]: ', persistence_attributes['AUTH_TOKEN'])
                 response = get_updates(persistence_attributes['AUTH_TOKEN'])
                 
                 if response['status'] == 401:
-                    print('401')
+                    print('[LaunchRequestHandler.handle]: ', 401)
                     handler_input.attributes_manager.delete_persistent_attributes()
                     
                     send_phone_code(session_attributes['PHONE_NUMBER'])
@@ -118,12 +118,12 @@ class PhoneAuthenticationIntentHandler(AbstractRequestHandler):
         if 'OTPCode' in slots:
             session_attributes['OTP_CODE'] = slots['OTPCode'].value
             auth_token = get_token_through_phone(session_attributes['OTP_CODE'], session_attributes['PHONE_NUMBER'])
-            print(auth_token)
+            print('[PhoneAuthenticationIntentHandler.handle]: ', auth_token)
             
             persistence_attributes['AUTH_TOKEN'] = auth_token
             handler_input.attributes_manager.save_persistent_attributes()
-            print(persistence_attributes)
-            print(persistence_attributes['AUTH_TOKEN'])
+            print('[PhoneAuthenticationIntentHandler.handle]: ', persistence_attributes)
+            print('[PhoneAuthenticationIntentHandler.handle]: ', persistence_attributes['AUTH_TOKEN'])
             
         else:
             speech = "I'm not sure what your confirmation code is, please try again"
@@ -151,7 +151,7 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
 
         if 'RECOMMENDATIONS' not in session_attributes or not session_attributes['RECOMMENDATIONS']:
             recommendations = get_recommendations(persistence_attributes['AUTH_TOKEN'])
-            print(recommendations)
+            print('[GetRecommendationsIntentHandler.handle]: ', recommendations)
             session_attributes['RECOMMENDATIONS'] = recommendations
             
         # session_attributes['PREVIOUS_MATCH'] = session_attributes.get('CURRENT_MATCH', '')
@@ -159,11 +159,11 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
         user = session_attributes['RECOMMENDATIONS'].pop()
         session_attributes['CURRENT_MATCH'] = user
         
-        print(user)
+        print('[GetRecommendationsIntentHandler.handle]: ', user)
         
 
         if isinstance(self, SwipeLeftIntentHandler):
-            print('swipe left here')
+            print('[GetRecommendationsIntentHandler.handle]: ', 'swipe left here')
             speech_text = 'Swiped left. Your next match is {}. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
         elif isinstance(self, SwipeRightIntentHandler):
             speech_text = 'Swiped right. Your next match is {}. Bio reads: {}'.format(user['name'], user['age'], user['bio'])
@@ -190,7 +190,7 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
         )
         
         if supports_display(handler_input):
-            print('supports display on match intent')
+            print('[GetRecommendationsIntentHandler.handle]: ', 'supports display on match intent')
             img = Image(
                 sources=[ImageInstance(url=user['photo'])])
             title = user['name'] + ' ' + user['age']
@@ -200,7 +200,7 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
             text_content = get_plain_text_content(
                 primary_text=primary_text, secondary_text=secondary_text, tertiary_text=tertiary_text)
                 
-            print(img, title, primary_text, secondary_text, tertiary_text)
+            print('[GetRecommendationsIntentHandler.handle]: ', img, title, primary_text, secondary_text, tertiary_text)
             
             handler_input.response_builder.add_directive(
                 RenderTemplateDirective(
@@ -224,11 +224,11 @@ class SwipeLeftIntentHandler(AbstractRequestHandler):
         session_attributes = handler_input.attributes_manager.session_attributes
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
-        print(session_attributes['CURRENT_MATCH'])
+        print('[SwipeLeftIntentHandler.handle]: ', session_attributes['CURRENT_MATCH'])
         
         response = swipe_left(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id'])
         
-        print('left', response)
+        print('[SwipeLeftIntentHandler.handle]: ', 'left', response)
 
         return GetRecommendationsIntentHandler.handle(self, handler_input)
 
@@ -244,7 +244,7 @@ class SwipeRightIntentHandler(AbstractRequestHandler):
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
         response = swipe_right(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
-        print('right', response)
+        print('[SwipeRightIntentHandler.handle]: ', 'right', response)
 
         return GetRecommendationsIntentHandler.handle(self, handler_input)
 
@@ -260,7 +260,7 @@ class SuperLikeIntentHandler(AbstractRequestHandler):
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
         response = super_like(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
-        print('super like', response)
+        print('[SwipeRightIntentHandler.handle]: ', 'super like', response)
         
         speech_text = "You super liked {}".format(session_attributes['CURRENT_MATCH']['name'])
         
@@ -291,7 +291,7 @@ class RewindIntentHandler(AbstractRequestHandler):
             "smallImageUrl": user['photo'],
             "largeImageUrl": user['photo']
         }
-        print(image)
+        print('[RewindIntentHandler.handle]: ', image)
         
         handler_input.response_builder.set_card(
             ui.StandardCard(
@@ -305,7 +305,7 @@ class RewindIntentHandler(AbstractRequestHandler):
         )
         
         if supports_display(handler_input):
-            print('supports display on match intent')
+            print('[RewindIntentHandler.handle]: ', 'supports display on match intent')
             img = Image(
                 sources=[ImageInstance(url=user['photo'])])
             title = user['name'] + ' ' + user['age']
@@ -372,7 +372,7 @@ class SetLocationIntentHandler(AbstractRequestHandler):
         )
         
         if supports_display(handler_input):
-            print('set location support display')
+            print('[SetLocationIntentHandler.handle]: ', 'set location support display')
             img = Image(
                 sources=[ImageInstance(url=map_location)], content_description=speech_text)
             title = "Set Location"
@@ -402,7 +402,7 @@ class FastMatchIntentHandler(AbstractRequestHandler):
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
         session_attributes['FAST_MATCH'] = get_fast_match_teasers(persistence_attributes['AUTH_TOKEN'])
-        print(session_attributes['FAST_MATCH'])
+        print('[FastMatchIntentHandler.handle]: ', session_attributes['FAST_MATCH'])
         
         speech_text = "You have {} people who liked you. Say get next match preview for the next person who liked you".format(len(session_attributes['FAST_MATCH']))
         reprompt = "Say get next match preview for the next person who liked you"
@@ -530,7 +530,7 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
     def handle(self, handler_input, exception):
         # type: (HandlerInput, Exception) -> Response
         session_attributes = handler_input.attributes_manager.session_attributes
-        print(session_attributes)
+        print('[CatchAllExceptionHandler.handle]: ', session_attributes)
         logger.error(exception, exc_info=True)
 
         speech = "Sorry, there was some problem. Please try again!!"
