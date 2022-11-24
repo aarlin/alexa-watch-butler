@@ -8,7 +8,7 @@ def set_location(auth_token, location):
     location_headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
+      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
     }
 
     URL = 'https://api.gotinder.com/user/ping'
@@ -31,7 +31,7 @@ def get_recommendations(auth_token):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
+      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
     }
     
     URL = 'https://api.gotinder.com/user/recs'
@@ -47,7 +47,7 @@ def swipe_left(auth_token, id):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
+      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
     }
     
     URL = 'https://api.gotinder.com/pass/{}'.format(id)
@@ -63,7 +63,7 @@ def swipe_right(auth_token, id):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
+      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
     }
     
     URL = 'https://api.gotinder.com/like/{}'.format(id)
@@ -79,7 +79,7 @@ def super_like(auth_token, id):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
+      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
     }
     
     URL = 'https://api.gotinder.com/like/{}/super'.format(id)
@@ -95,7 +95,7 @@ def get_profile(auth_token, id):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
+      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
     }
     
     URL = 'https://api.gotinder.com/user/{}'.format(id)
@@ -110,7 +110,7 @@ def get_updates(auth_token):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
+      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
     }
     
     URL = 'https://api.gotinder.com/updates'
@@ -129,7 +129,7 @@ def get_fast_match_teasers(auth_token):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)',
+      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)',
       'platform': 'android'
     }
     
