@@ -95,6 +95,14 @@
                     ]
                 },
                 {
+                    "name": "ShareCurrentProfileIntent",
+                    "slots": [],
+                    "samples": [
+                        "get current profile",
+                        "get current profile link"
+                    ]
+                },
+                {
                     "name": "RewindIntent",
                     "slots": [],
                     "samples": [
