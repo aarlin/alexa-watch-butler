@@ -161,6 +161,8 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
         
         print('[GetRecommendationsIntentHandler.handle]: ', user)
         
+        profile_link = get_profile(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id'])
+        print('[GetRecommendationsIntentHandler.handle]: get profile ', profile_link['link'])
 
         if isinstance(self, SwipeLeftIntentHandler):
             print('[GetRecommendationsIntentHandler.handle]: ', 'swipe left here')
@@ -181,7 +183,7 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
         handler_input.response_builder.set_card(
             ui.StandardCard(
                 title= user['name'] + ' ' + user['age'],
-                text= user['job'] + ' ' + user['company'] + '\n' + user['school'] + '\n' + user['bio'],
+                text= profile_link['link'] + '\n' + user['job'] + ' ' + user['company'] + '\n' + user['school'] + '\n' + user['bio'],
                 image=ui.Image(
                     small_image_url=user['photo'],
                     large_image_url=user['photo']
@@ -194,7 +196,7 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
             img = Image(
                 sources=[ImageInstance(url=user['photo'])])
             title = user['name'] + ' ' + user['age']
-            primary_text = user['job'] + ' ' + user['company']
+            primary_text = profile_link['link'] + '\n' + user['job'] + ' ' + user['company']
             secondary_text = user['school']
             tertiary_text = user['bio']
             text_content = get_plain_text_content(
@@ -260,7 +262,7 @@ class SuperLikeIntentHandler(AbstractRequestHandler):
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
         response = super_like(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
-        print('[SwipeRightIntentHandler.handle]: ', 'super like', response)
+        print('[SuperLikeIntentHandler.handle]: ', 'super like', response)
         
         speech_text = "You super liked {}".format(session_attributes['CURRENT_MATCH']['name'])
         
@@ -271,6 +273,22 @@ class SuperLikeIntentHandler(AbstractRequestHandler):
             speech_text).set_card(SimpleCard(
                 "Super Like", speech_text)).set_should_end_session(False)
         return handler_input.response_builder.response
+
+class ShareCurrentProfileIntentHandler(AbstractRequestHandler):
+    """Handler for Get Profile Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("ShareCurrentProfileIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Get Profile Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
+        
+        response = get_profile(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
+        print('[ShareCurrentProfileIntentHandler.handle]: ', 'profile', response)
+
+        return ShareCurrentProfileIntentHandler.handle(self, handler_input)
     
 class RewindIntentHandler(AbstractRequestHandler):
     """Handler for Rewind Intent."""
@@ -545,6 +563,7 @@ sb.add_request_handler(GetRecommendationsIntentHandler())
 sb.add_request_handler(SwipeLeftIntentHandler())
 sb.add_request_handler(SwipeRightIntentHandler())
 sb.add_request_handler(SuperLikeIntentHandler())
+# sb.add_request_handler(ShareCurrentProfileIntentHandler())
 sb.add_request_handler(RewindIntentHandler())
 sb.add_request_handler(SetLocationIntentHandler())
 sb.add_request_handler(FastMatchIntentHandler())
