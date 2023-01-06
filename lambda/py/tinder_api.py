@@ -99,9 +99,9 @@ def get_profile(auth_token, id):
       'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
     
-    URL = 'https://api.gotinder.com/user/{}'.format(id)
+    URL = 'https://api.gotinder.com/user/{}/share'.format(id)
     
-    r = requests.get(URL, headers=headers, verify=True)
+    r = requests.post(URL, headers=headers, verify=True)
     response = r.json()
     print('[get_profile]: ', response)
 
