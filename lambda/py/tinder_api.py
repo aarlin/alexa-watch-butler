@@ -1,5 +1,6 @@
 import json
 import requests
+import re
 from geopy.geocoders import Nominatim
 from utils import get_age, extract_user_data
 from datetime import datetime
@@ -8,7 +9,7 @@ def set_location(auth_token, location):
     location_headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
 
     URL = 'https://api.gotinder.com/user/ping'
@@ -31,7 +32,7 @@ def get_recommendations(auth_token):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
     
     URL = 'https://api.gotinder.com/user/recs'
@@ -47,7 +48,7 @@ def swipe_left(auth_token, id):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
     
     URL = 'https://api.gotinder.com/pass/{}'.format(id)
@@ -63,7 +64,7 @@ def swipe_right(auth_token, id):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
     
     URL = 'https://api.gotinder.com/like/{}'.format(id)
@@ -79,7 +80,7 @@ def super_like(auth_token, id):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
     
     URL = 'https://api.gotinder.com/like/{}/super'.format(id)
@@ -95,7 +96,7 @@ def get_profile(auth_token, id):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
     
     URL = 'https://api.gotinder.com/user/{}'.format(id)
@@ -110,7 +111,7 @@ def get_updates(auth_token):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)'
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)'
     }
     
     URL = 'https://api.gotinder.com/updates'
@@ -129,7 +130,7 @@ def get_fast_match_teasers(auth_token):
     headers = {
       'X-Auth-Token' : auth_token,
       'Content-Type': 'application/json',
-      'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)',
+      'User-Agent': 'Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)',
       'platform': 'android'
     }
     
@@ -141,5 +142,9 @@ def get_fast_match_teasers(auth_token):
     
     users = [user for user in response['data']['results']]
     user_photos = [user['user']['photos'][0]['url'] for user in users]
+
+    deblurred_user_photos = [re.sub(r'blurred_.+?_(.+)', r'original_\1', url) for url in user_photos]
+    jpeg_converted_photos = [url.replace('.jpg', '.jpeg') for url in deblurred_user_photos]
+    print('[get_fast_match_teasers]: ', jpeg_converted_photos)
     
-    return user_photos
+    return jpeg_converted_photos
