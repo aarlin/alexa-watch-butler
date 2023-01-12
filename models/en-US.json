@@ -71,8 +71,7 @@
                         "Swipe left",
                         "Left",
                         "No",
-                        "Nope",
-                        "Pass"
+                        "Nope"
                     ]
                 },
                 {
@@ -129,6 +128,22 @@
                     "slots": [],
                     "samples": [
                         "get next match preview"
+                    ]
+                },
+                {
+                    "name": "PassMatchIntent",
+                    "slots": [],
+                    "samples": [
+                        "pass",
+                        "pass match"
+                    ]
+                },
+                {
+                    "name": "ConfirmMatchIntent",
+                    "slots": [],
+                    "samples": [
+                        "match",
+                        "confirm match"
                     ]
                 },
                 {
