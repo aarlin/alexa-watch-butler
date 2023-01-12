@@ -37,11 +37,14 @@ def get_recommendations(auth_token):
     
     URL = 'https://api.gotinder.com/user/recs'
     
-    r = requests.get(URL, headers=headers, verify=True)
-    response = r.json()
-    print('[get_recommendations]: ', response)
-        
-    return [extract_user_data(user) for user in response['results']]
+    try:
+        r = requests.get(URL, headers=headers, verify=True)
+        response = r.json()
+        print('[get_recommendations]: ', response)
+            
+        return [extract_user_data(user) for user in response['results']]
+    except BaseException as error:
+        print('An exception occurred with recommendations: {}'.format(error))
 
 
 def swipe_left(auth_token, id):
@@ -142,9 +145,16 @@ def get_fast_match_teasers(auth_token):
     
     users = [user for user in response['data']['results']]
     user_photos = [user['user']['photos'][0]['url'] for user in users]
+        
+    user_uuids = [user['user']['_id'] for user in users]
+    
+    user_ids = [user['user']['photos'][0]['url'].split('/')[3].split('_')[0] for user in users]
+    
+    print('[get_fast_match_teasers]:', user_ids)
 
     deblurred_user_photos = [re.sub(r'blurred_.+?_(.+)', r'original_\1', url) for url in user_photos]
     jpeg_converted_photos = [url.replace('.jpg', '.jpeg') for url in deblurred_user_photos]
     print('[get_fast_match_teasers]: ', jpeg_converted_photos)
     
-    return jpeg_converted_photos
+    return list(zip(user_ids, jpeg_converted_photos))
+
