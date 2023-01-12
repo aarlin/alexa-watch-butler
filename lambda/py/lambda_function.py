@@ -157,11 +157,11 @@ class GetRecommendationsIntentHandler(AbstractRequestHandler):
         # session_attributes['PREVIOUS_MATCH'] = session_attributes.get('CURRENT_MATCH', '')
         # print('previous', session_attributes['PREVIOUS_MATCH'])
         user = session_attributes['RECOMMENDATIONS'].pop()
-        session_attributes['CURRENT_MATCH'] = user
+        session_attributes['CURRENT_RECOMMENDATION'] = user
         
         print('[GetRecommendationsIntentHandler.handle]: ', user)
         
-        profile_link = get_profile(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id'])
+        profile_link = get_profile(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_RECOMMENDATION']['id'])
         print('[GetRecommendationsIntentHandler.handle]: get profile ', profile_link['link'])
 
         if isinstance(self, SwipeLeftIntentHandler):
@@ -226,9 +226,9 @@ class SwipeLeftIntentHandler(AbstractRequestHandler):
         session_attributes = handler_input.attributes_manager.session_attributes
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
-        print('[SwipeLeftIntentHandler.handle]: ', session_attributes['CURRENT_MATCH'])
+        print('[SwipeLeftIntentHandler.handle]: ', session_attributes['CURRENT_RECOMMENDATION'])
         
-        response = swipe_left(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id'])
+        response = swipe_left(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_RECOMMENDATION']['id'])
         
         print('[SwipeLeftIntentHandler.handle]: ', 'left', response)
 
@@ -245,7 +245,7 @@ class SwipeRightIntentHandler(AbstractRequestHandler):
         session_attributes = handler_input.attributes_manager.session_attributes
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
-        response = swipe_right(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
+        response = swipe_right(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_RECOMMENDATION']['id']) 
         print('[SwipeRightIntentHandler.handle]: ', 'right', response)
 
         return GetRecommendationsIntentHandler.handle(self, handler_input)
@@ -261,10 +261,10 @@ class SuperLikeIntentHandler(AbstractRequestHandler):
         session_attributes = handler_input.attributes_manager.session_attributes
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
-        response = super_like(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
+        response = super_like(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_RECOMMENDATION']['id']) 
         print('[SuperLikeIntentHandler.handle]: ', 'super like', response)
         
-        speech_text = "You super liked {}".format(session_attributes['CURRENT_MATCH']['name'])
+        speech_text = "You super liked {}".format(session_attributes['CURRENT_RECOMMENDATION']['name'])
         
         if 'limit_exceeded' in response.keys():
             speech_text = 'You do not have any super likes. Your super like resets at {}'.format(response['super_likes']['resets_at'])
@@ -285,7 +285,7 @@ class ShareCurrentProfileIntentHandler(AbstractRequestHandler):
         session_attributes = handler_input.attributes_manager.session_attributes
         persistence_attributes = handler_input.attributes_manager.persistent_attributes
         
-        response = get_profile(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH']['id']) 
+        response = get_profile(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_RECOMMENDATION']['id']) 
         print('[ShareCurrentProfileIntentHandler.handle]: ', 'profile', response)
 
         return ShareCurrentProfileIntentHandler.handle(self, handler_input)
@@ -299,9 +299,9 @@ class RewindIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         """Handler for Rewind Intent."""
         session_attributes = handler_input.attributes_manager.session_attributes
-        user = session_attributes['PREVIOUS_MATCH']
-        session_attributes['NEXT_MATCH'] = session_attributes['CURRENT_MATCH']
-        session_attributes['CURRENT_MATCH'] = user
+        user = session_attributes['PREVIOUS_RECOMMENDATION']
+        session_attributes['NEXT_MATCH'] = session_attributes['CURRENT_RECOMMENDATION']
+        session_attributes['CURRENT_RECOMMENDATION'] = user
         
         speech_text = "{}. Bio reads: {}".format(user['name'], user['age'], user['bio']) 
         
@@ -422,18 +422,18 @@ class FastMatchIntentHandler(AbstractRequestHandler):
         session_attributes['FAST_MATCH'] = get_fast_match_teasers(persistence_attributes['AUTH_TOKEN'])
         print('[FastMatchIntentHandler.handle]: ', session_attributes['FAST_MATCH'])
         
-        speech_text = "You have {} people who liked you. Say get next match preview for the next person who liked you".format(len(session_attributes['FAST_MATCH']))
-        reprompt = "Say get next match preview for the next person who liked you"
+        speech_text = "You have {} people who liked you. Say get next match preview, pass or match".format(len(session_attributes['FAST_MATCH']))
+        reprompt = "Say get next match preview, pass or match"
         
         if len(session_attributes['FAST_MATCH']) > 0:
-            individual_fast_match = session_attributes['FAST_MATCH'].pop()
+            session_attributes['CURRENT_MATCH'] = session_attributes['FAST_MATCH'].pop()
             handler_input.response_builder.set_card(
                 ui.StandardCard(
                     title="Who Liked You",
                     text= speech_text,
                     image=ui.Image(
-                        small_image_url=individual_fast_match,
-                        large_image_url=individual_fast_match
+                        small_image_url=session_attributes['CURRENT_MATCH'][1],
+                        large_image_url=session_attributes['CURRENT_MATCH'][1]
                     )
                 )
             )
@@ -458,14 +458,14 @@ class FastMatchPreviewerIntentHandler(AbstractRequestHandler):
             speech_text = "Here is the photo of the next person who liked you"
             reprompt = "Say get next match preview for the next person who liked you"
             
-            individual_fast_match = session_attributes['FAST_MATCH'].pop()
+            session_attributes['CURRENT_MATCH'] = session_attributes['FAST_MATCH'].pop()
             handler_input.response_builder.set_card(
                 ui.StandardCard(
                     title="Who Liked You",
                     text= speech_text,
                     image=ui.Image(
-                        small_image_url=individual_fast_match,
-                        large_image_url=individual_fast_match
+                        small_image_url=session_attributes['CURRENT_MATCH'][1],
+                        large_image_url=session_attributes['CURRENT_MATCH'][1]
                     )
                 )
             )
@@ -476,6 +476,37 @@ class FastMatchPreviewerIntentHandler(AbstractRequestHandler):
             
             return handler_input.response_builder.speak(speech_text).ask(reprompt).set_should_end_session(False).response
 
+class PassMatchIntentHandler(AbstractRequestHandler):
+    """Handler for Pass Match Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("PassMatchIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Pass Match Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
+        
+        response = swipe_left(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH'][0]) 
+        print('[PassMatchIntentHandler.handle]: ', 'pass', response)
+
+        return FastMatchPreviewerIntentHandler.handle(self, handler_input)
+
+class ConfirmMatchIntentHandler(AbstractRequestHandler):
+    """Handler for Confirm Match Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("ConfirmMatchIntent")(handler_input)
+
+    def handle(self, handler_input):
+        """Handler for Confirm Match Intent."""
+        session_attributes = handler_input.attributes_manager.session_attributes
+        persistence_attributes = handler_input.attributes_manager.persistent_attributes
+        
+        response = swipe_right(persistence_attributes['AUTH_TOKEN'], session_attributes['CURRENT_MATCH'][0]) 
+        print('[ConfirmMatchIntentHandler.handle]: ', 'match', response)
+
+        return FastMatchPreviewerIntentHandler.handle(self, handler_input)
 
 class HelpIntentHandler(AbstractRequestHandler):
     """Handler for Help Intent."""
@@ -568,6 +599,8 @@ sb.add_request_handler(RewindIntentHandler())
 sb.add_request_handler(SetLocationIntentHandler())
 sb.add_request_handler(FastMatchIntentHandler())
 sb.add_request_handler(FastMatchPreviewerIntentHandler())
+sb.add_request_handler(PassMatchIntentHandler())
+sb.add_request_handler(ConfirmMatchIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
