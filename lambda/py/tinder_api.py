@@ -157,4 +157,3 @@ def get_fast_match_teasers(auth_token):
     print('[get_fast_match_teasers]: ', jpeg_converted_photos)
     
     return list(zip(user_ids, jpeg_converted_photos))
-

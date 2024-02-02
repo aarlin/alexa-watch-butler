@@ -37,14 +37,25 @@ def send_phone_code(phone_number):
         messageout = AuthGatewayRequest(phone=Phone(phone=phonenumber))
     seconds = random.uniform(100, 250)
     headers = {
-            'tinder-version': "13.21.0", 'install-id': installid,
-            'user-agent': "Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)", 'connection': "close",
-            'platform-variant': "Google-Play", 'persistent-device-id': deviceid,
-            'accept-encoding': "gzip, deflate", 'appsflyer-id': "1662166210019-8773369",
-            'platform': "ios", 'app-version': "4911", 'os-version': "160000100001", 'app-session-id': appsessionid,
-            'x-supported-image-formats': "webp", 'funnel-session-id': funnelid,
-            'app-session-time-elapsed': format(seconds, ".3f"), 'accept-language': "en-US",
-            'content-type': "application/x-protobuf"
+        'user-agent': "Tinder Android Version 12.6.0", 
+        'os-version': "25",
+        'app-version': "4023", 
+        'platform': "android", 
+        'platform-variant': "Google-Play", 
+        'x-supported-image-formats': "webp",
+        'accept-language': "en-US",
+        'tinder-version': "12.6.0", 
+        'store-Variant': 'Play-Store',
+        'persistent-device-id': deviceid,
+        'content-type': "application/x-protobuf",
+        'host': 'api.gotinder.com',
+        'connection': "close",
+        'accept-encoding': "gzip,deflate, br",
+
+        'install-id': installid,
+        'app-session-id': appsessionid,
+        'funnel-session-id': funnelid,
+        'app-session-time-elapsed': format(seconds, ".3f")
     }
     if headers is not None:
         session.headers.update(headers)
@@ -71,6 +82,8 @@ def get_token_through_phone(otp_code, phone_number):
     }
     
     r = requests.post(CODE_REQUEST_URL, headers=HEADERS, data=json.dumps(data), verify=True)
+    
+    print('[get_token_through_phone]: base flow: ', r)
 
     response = r.json()
     print('[get_token_through_phone]: ', response)
@@ -90,6 +103,8 @@ def get_token_through_phone(otp_code, phone_number):
         }
         
         r = requests.post(CODE_REQUEST_URL, headers=HEADERS, data=json.dumps(data), verify=True)
+        
+        print('[get_token_through_phone]: validated flow: ', r)
 
         response = r.json()
         print('[get_token_through_phone]: login auth refresh response: ', response)
@@ -97,4 +112,3 @@ def get_token_through_phone(otp_code, phone_number):
         return response.get('data')['api_token']
     else:
         return False
-

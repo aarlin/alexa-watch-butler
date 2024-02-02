@@ -107,13 +107,3 @@ def extract_user_data(user):
 
 def sanitize_information(information):
     return re.sub('&', ' and ', str(information))
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
