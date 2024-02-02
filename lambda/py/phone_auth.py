@@ -1,37 +1,100 @@
 import json
 import requests
+import random
+import string
+import uuid
+from authgateway import *
+import secrets
+from pathlib import Path
+import sys
 
 def send_phone_code(phone_number):
-    CODE_REQUEST_URL = "https://graph.accountkit.com/v1.2/start_login?access_token=AA%7C464891386855067%7Cd1891abb4b0bcdfa0580d9b839f4a522&credentials_type=phone_number&fb_app_events_enabled=1&fields=privacy_policy%2Cterms_of_service&locale=en_US&phone_number=#placeholder&response_type=token&sdk=ios"
-    HEADERS = {'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_2_5 like Mac OS X) AppleWebKit/604.5.6 (KHTML, like Gecko) Mobile/15D60 AKiOSSDK/4.29.0'}
+    installid = ''.join(random.choices(
+        string.ascii_uppercase + string.ascii_lowercase + string.digits, k=11))
+    session = requests.Session()
+    session.headers.update({"user-agent": "Tinder Android Version 13.21.0"})
+    url = "https://api.gotinder.com"
+    funnelid = str(uuid.uuid4())
+    appsessionid = str(uuid.uuid4())
+    deviceid = secrets.token_hex(8)
+    authtoken = None
+    refreshtoken = None
+    userid = None
+    email = None
+    phonenumber = phone_number
 
-    URL = CODE_REQUEST_URL.replace("#placeholder", phone_number)
-    r = requests.post(URL, headers=HEADERS, verify=True)
+    payload = {
+        "device_id": installid,
+        "experiments": ["default_login_token", "tinder_u_verification_method", "tinder_rules",
+                        "user_interests_available"]
+    }
+    session.post(url + "/v2/buckets", json=payload)
+    if refreshtoken is not None:
+        print('[send_phone_code]: ', "Attempting to refresh auth token with saved refresh token")
+        messageout = AuthGatewayRequest(
+            refresh_auth=RefreshAuth(refresh_token=refreshtoken))
+    else:
+        messageout = AuthGatewayRequest(phone=Phone(phone=phonenumber))
+    seconds = random.uniform(100, 250)
+    headers = {
+            'tinder-version': "13.21.0", 'install-id': installid,
+            'user-agent': "Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)", 'connection': "close",
+            'platform-variant': "Google-Play", 'persistent-device-id': deviceid,
+            'accept-encoding': "gzip, deflate", 'appsflyer-id': "1662166210019-8773369",
+            'platform': "ios", 'app-version': "4911", 'os-version': "160000100001", 'app-session-id': appsessionid,
+            'x-supported-image-formats': "webp", 'funnel-session-id': funnelid,
+            'app-session-time-elapsed': format(seconds, ".3f"), 'accept-language': "en-US",
+            'content-type': "application/x-protobuf"
+    }
+    if headers is not None:
+        session.headers.update(headers)
+    r = session.post(url + "/v3/auth/login", data=bytes(messageout))
+    response = AuthGatewayResponse().parse(r.content).to_dict()
+    print('[send_phone_code]: ', response)
+       # print(response)
+    # if(response.get("data")['sms_sent'] == 'false'):
+    #     return False
+    # else:
+    #     return True
+    return response
+
+def get_token_through_phone(otp_code, phone_number):
+    CODE_REQUEST_URL = "https://api.gotinder.com/v2/auth/sms/validate?auth_type=sms"
+    HEADERS = {
+        'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 16.1.1; Scale/3.00)',
+        'Content-Type': 'application/json',
+    }
+    
+    data = {
+        "otp_code": otp_code,
+        "phone_number": phone_number
+    }
+    
+    r = requests.post(CODE_REQUEST_URL, headers=HEADERS, data=json.dumps(data), verify=True)
+
     response = r.json()
-    if(response.get("login_request_code") == None):
+    print('[get_token_through_phone]: ', response)
+    
+    if(response.get("data")['validated'] == True):
+        refresh_token = response.get("data")['refresh_token']
+        
+        CODE_REQUEST_URL = "https://api.gotinder.com/v2/auth/login/sms"
+        HEADERS = {
+            'User-Agent': 'Tinder/13.21.0 (iPhone; iOS 12.4.1; Scale/2.00)',
+            'Content-Type': 'application/json',
+        }
+        
+        data = {
+            "client_version": "13.21.0",
+            "refresh_token": refresh_token
+        }
+        
+        r = requests.post(CODE_REQUEST_URL, headers=HEADERS, data=json.dumps(data), verify=True)
+
+        response = r.json()
+        print('[get_token_through_phone]: login auth refresh response: ', response)
+            
+        return response.get('data')['api_token']
+    else:
         return False
-    else:
-        return response["login_request_code"]
-
-def get_token_through_phone(sms_code, phone_number, request_code):
-    CODE_VALIDATE_URL = "https://graph.accountkit.com/v1.2/confirm_login?access_token=AA%7C464891386855067%7Cd1891abb4b0bcdfa0580d9b839f4a522&confirmation_code=#confirmation_code&credentials_type=phone_number&fb_app_events_enabled=1&fields=privacy_policy%2Cterms_of_service&locale=en_US&login_request_code=#request_code&phone_number=#phone_number&response_type=token&sdk=ios"
-    TOKEN_URL = "https://api.gotinder.com/v2/auth/login/accountkit"
-    HEADERS = {'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_2_5 like Mac OS X) AppleWebKit/604.5.6 (KHTML, like Gecko) Mobile/15D60 AKiOSSDK/4.29.0'}
-
-    VALIDATE_URL = CODE_VALIDATE_URL.replace("#confirmation_code", sms_code)
-    VALIDATE_URL = VALIDATE_URL.replace("#phone_number", phone_number)  
-    VALIDATE_URL = VALIDATE_URL.replace("#request_code", request_code)
-    r_validate = requests.post(VALIDATE_URL, headers=HEADERS, verify=True)
-    validate_response = r_validate.json()
-    print(validate_response)
-    access_token = validate_response["access_token"]
-    access_id = validate_response["id"]
-    GetToken_content = json.dumps({'token':access_token, 'id':access_id, "client_version":"9.0.1"})
-    GetToken_headers = {'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_2_5 like Mac OS X) AppleWebKit/604.5.6 (KHTML, like Gecko) Mobile/15D60 AKiOSSDK/4.29.0', 'Content-Type':'application/json'}
-    r_GetToken = requests.post(TOKEN_URL, data=GetToken_content, headers=GetToken_headers, verify=True)
-    token_response = r_GetToken.json()
-    if(token_response["data"].get("api_token") == None):
-        return token_response
-    else:
-        return token_response["data"]["api_token"]
 

@@ -20,51 +20,19 @@
                     "samples": []
                 },
                 {
-                    "name": "PhoneAuthIntent",
-                    "slots": [],
-                    "samples": [
-                        "authenticate with phone",
-                        "authenticate through phone",
-                        "phone authentication",
-                        "phone"
-                    ]
-                },
-                {
-                    "name": "FacebookAuthIntent",
-                    "slots": [],
-                    "samples": [
-                        "authenticate with facebook",
-                        "authenticate through facebook",
-                        "facebook authentication",
-                        "facebook"
-                    ]
-                },
-                {
-                    "name": "PhoneRequestCodeIntent",
-                    "slots": [
-                        {
-                            "name": "PhoneNumber",
-                            "type": "AMAZON.PhoneNumber"
-                        }
-                    ],
-                    "samples": [
-                        "My phone number is {PhoneNumber}",
-                        "{PhoneNumber}"
-                    ]
-                },
-                {
                     "name": "PhoneAuthenticationIntent",
                     "slots": [
                         {
-                            "name": "SMSCode",
+                            "name": "OTPCode",
                             "type": "AMAZON.NUMBER"
                         }
                     ],
                     "samples": [
-                        "My code is {SMSCode}",
-                        "My request code is {SMSCode}",
-                        "Request code is {SMSCode}",
-                        "{SMSCode}"
+                        "My code is {OTPCode}",
+                        "My request code is {OTPCode}",
+                        "Request code is {OTPCode}",
+                        "{OTPCode}",
+                        "My tinder code is {OTPCode}"
                     ]
                 },
                 {
@@ -81,24 +49,25 @@
                     ],
                     "samples": [
                         "Set my location to {City}",
+                        "Set my location to {Country}",
+                        "Set my location to {City} {Country}",
                         "Set my country to {Country}",
-                        "Set my location to {Country}"
+                        "Set my city to {City}"
                     ]
                 },
                 {
-                    "name": "GetMatchesIntent",
+                    "name": "GetRecommendationsIntent",
                     "slots": [],
                     "samples": [
-                        "Get matches",
-                        "Get my matches"
+                        "Get nearby users",
+                        "Get recommendations",
+                        "Get profiles"
                     ]
                 },
                 {
                     "name": "SwipeLeftIntent",
                     "slots": [],
                     "samples": [
-                        "Pass",
-                        "Skip",
                         "Swipe left",
                         "Left",
                         "No",
@@ -113,6 +82,68 @@
                         "Right",
                         "Like",
                         "Yes"
+                    ]
+                },
+                {
+                    "name": "SuperLikeIntent",
+                    "slots": [],
+                    "samples": [
+                        "Swipe up",
+                        "Up",
+                        "Super like"
+                    ]
+                },
+                {
+                    "name": "ShareCurrentProfileIntent",
+                    "slots": [],
+                    "samples": [
+                        "get current profile",
+                        "get current profile link"
+                    ]
+                },
+                {
+                    "name": "RewindIntent",
+                    "slots": [],
+                    "samples": [
+                        "go back",
+                        "previous",
+                        "rewind"
+                    ]
+                },
+                {
+                    "name": "FastMatchIntent",
+                    "slots": [],
+                    "samples": [
+                        "get fast matches",
+                        "get fast match",
+                        "get match previews",
+                        "who liked me",
+                        "who likes me",
+                        "see who liked me",
+                        "see who likes me"
+                    ]
+                },
+                {
+                    "name": "FastMatchPreviewerIntent",
+                    "slots": [],
+                    "samples": [
+                        "get next match preview"
+                    ]
+                },
+                {
+                    "name": "PassMatchIntent",
+                    "slots": [],
+                    "samples": [
+                        "pass",
+                        "pass match"
+                    ]
+                },
+                {
+                    "name": "ConfirmMatchIntent",
+                    "slots": [],
+                    "samples": [
+                        "match",
+                        "confirm match"
                     ]
                 },
                 {
