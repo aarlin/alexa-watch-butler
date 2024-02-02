@@ -5,6 +5,8 @@ Tinder with Voice Commands
 
 ![](./images/108.png) ![](./images/plus-108.png) ![](./images/108-alexa.png)
 
+NOTE: Nonfunctioning due to changes in API asking for Arkose captcha
+
 Setup
 -----
 
